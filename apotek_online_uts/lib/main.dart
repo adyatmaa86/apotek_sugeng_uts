@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'screens/katalog_screen.dart';
+import 'screens/beranda_screen.dart';
 import 'utils/app_state.dart';
 import 'services/layanan_api.dart';
 
@@ -28,7 +28,7 @@ class ApotekOnlineApp extends StatelessWidget {
         scaffoldBackgroundColor: const Color(0xFFF8F9FA),
         appBarTheme: const AppBarTheme(elevation: 0, centerTitle: false),
       ),
-      home: const KatalogScreen(),
+      home: const BerandaScreen(),
     );
   }
 }
