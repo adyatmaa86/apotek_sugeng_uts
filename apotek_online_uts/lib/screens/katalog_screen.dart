@@ -162,7 +162,7 @@ class _KatalogScreenState extends State<KatalogScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'Apotek Sehat Online',
+          'Apotek Sugeng',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.teal,

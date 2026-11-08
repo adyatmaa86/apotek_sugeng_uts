@@ -279,7 +279,7 @@ class _BerandaScreenState extends State<BerandaScreen> {
                             Row(
                               children: [
                                 const Text(
-                                  'Apotek Sehat Online',
+                                  'Apotek Sugeng',
                                   style: TextStyle(
                                     fontSize: 11,
                                     color: Color(0xFF64748B),

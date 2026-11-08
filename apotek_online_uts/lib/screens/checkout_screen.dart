@@ -921,7 +921,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       RadioListTile<String>(
                         value: 'transfer_manual',
                         title: const Text('Transfer Bank Manual'),
-                        subtitle: const Text('Transfer ke rekening Apotek Sehat'),
+                        subtitle: const Text('Transfer ke rekening Apotek Sugeng'),
                         activeColor: Colors.teal,
                       ),
                       Divider(height: 1, color: Colors.grey.shade200),

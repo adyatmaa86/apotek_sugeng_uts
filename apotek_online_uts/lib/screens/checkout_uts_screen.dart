@@ -8,11 +8,6 @@ import '../utils/app_state.dart';
 import '../widgets/widget_keadaan.dart';
 import 'pesanan_detail_screen.dart';
 
-/// Halaman checkout MODE SIMULASI (UTS) — memenuhi ketentuan UTS:
-/// - Pengantaran memakai data kurir internal toko (tabel kurir di server,
-///   ongkir dihitung server berdasarkan wilayah yang dipilih pembeli).
-/// - Pembayaran hanya COD dan transfer manual (disimulasikan sebagai
-///   perubahan status pesanan, tanpa payment gateway pihak ketiga).
 class CheckoutUtsScreen extends StatefulWidget {
   final KeranjangDataModel keranjangData;
 
@@ -343,7 +338,7 @@ class _CheckoutUtsScreenState extends State<CheckoutUtsScreen> {
                       value: 'transfer_manual',
                       title: const Text('Transfer Bank Manual'),
                       subtitle: const Text(
-                        'Transfer ke rekening Apotek Sehat lalu tekan tombol '
+                        'Transfer ke rekening Apotek Sugeng lalu tekan tombol '
                         'sudah bayar di rincian pesanan',
                       ),
                       activeColor: Colors.teal,
