@@ -1,6 +1,12 @@
 # Proyek UTS: Toko Online Apotek & Alat Kesehatan
 **Mata Kuliah:** Sistem Terdistribusi & Pemrograman Aplikasi Perangkat Bergerak  
-**Penyusun:** Ceo Adyatma86 & Tim  
+**Penyusun:** 
+1.Achmad Helmy Aziz Adyatma 24102001
+2.Rifqi Bintang Syahputra 24102017
+3.Risky Putra Adielia 24102020
+4.Muhamad Septiyan 24102035
+5.Sandy Agustiya Saputra 24102037
+6.Zayyan Muhammad Ihsan Syafatullah 24102039
 **Arsitektur:** REST API Laravel (Backend) + Flutter Mobile (Frontend)
 
 ---
