@@ -107,8 +107,7 @@
 
 ---
 
-## 7. Tautan Video Demo & Kelengkapan
-- **Video Demo Aplikasi & Pengujian 5 Jenis Galat:** `[Tautan Video Demo YouTube / GDrive]`
+## 7. Kelengkapan
 - **Dokumentasi PDF Endpoint API:** Terlampir pada berkas PDF tugas.
 
 ---
