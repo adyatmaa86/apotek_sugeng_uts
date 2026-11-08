@@ -124,7 +124,7 @@ class _FormProdukScreenState extends State<FormProdukScreen> {
       child: Scaffold(
         appBar: AppBar(
           title: Text(title),
-          backgroundColor: Colors.teal,
+          backgroundColor: const Color(0xFF005B82),
           foregroundColor: Colors.white,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
@@ -279,7 +279,7 @@ class _FormProdukScreenState extends State<FormProdukScreen> {
                           'Tandai jika obat termasuk golongan obat keras',
                         ),
                         value: _perluResep,
-                        activeThumbColor: Colors.teal,
+                        activeThumbColor: const Color(0xFF0284C7),
                         onChanged: (val) => setState(() => _perluResep = val),
                       ),
                       const Divider(height: 1),
@@ -292,7 +292,7 @@ class _FormProdukScreenState extends State<FormProdukScreen> {
                           'Jika dinonaktifkan, produk tampil sebagai tidak tersedia',
                         ),
                         value: _tersedia,
-                        activeThumbColor: Colors.teal,
+                        activeThumbColor: const Color(0xFF0284C7),
                         onChanged: (val) => setState(() => _tersedia = val),
                       ),
                     ],
@@ -307,7 +307,7 @@ class _FormProdukScreenState extends State<FormProdukScreen> {
                         onPressed: _sedangMenyimpan ? null : _batal,
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 14),
-                          side: const BorderSide(color: Colors.grey),
+                          side: const BorderSide(color: Color(0xFFE2E8F0)),
                         ),
                         child: const Text('Batal'),
                       ),
@@ -318,9 +318,12 @@ class _FormProdukScreenState extends State<FormProdukScreen> {
                       child: ElevatedButton.icon(
                         onPressed: _sedangMenyimpan ? null : _simpan,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.teal,
+                          backgroundColor: const Color(0xFF005B82),
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                         ),
                         icon: _sedangMenyimpan
                             ? const SizedBox(

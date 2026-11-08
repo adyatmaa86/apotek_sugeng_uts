@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'screens/katalog_screen.dart';
+import 'screens/beranda_screen.dart';
 import 'utils/app_state.dart';
 import 'services/layanan_api.dart';
 
@@ -20,15 +20,15 @@ class ApotekOnlineApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Apotek Sehat Online',
+      title: 'Apotek Sugeng',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF0284C7)),
         useMaterial3: true,
         scaffoldBackgroundColor: const Color(0xFFF8F9FA),
         appBarTheme: const AppBarTheme(elevation: 0, centerTitle: false),
       ),
-      home: const KatalogScreen(),
+      home: const BerandaScreen(),
     );
   }
 }

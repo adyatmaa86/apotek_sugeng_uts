@@ -139,7 +139,8 @@ class _KelolaProdukScreenState extends State<KelolaProdukScreen> {
                 ? 'Produk "${produk.nama}" berhasil diperbarui!'
                 : 'Produk baru berhasil ditambahkan!',
           ),
-          backgroundColor: Colors.teal,
+          backgroundColor: const Color(0xFF0284C7),
+          behavior: SnackBarBehavior.floating,
         ),
       );
       _muatProduk();
@@ -151,7 +152,8 @@ class _KelolaProdukScreenState extends State<KelolaProdukScreen> {
     final konfirmasi = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Konfirmasi Hapus Produk'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Konfirmasi Hapus Produk', style: TextStyle(fontWeight: FontWeight.bold)),
         content: Text(
           'Apakah Anda yakin ingin menghapus "${produk.nama}" dari katalog obat apotek?',
         ),
@@ -165,6 +167,7 @@ class _KelolaProdukScreenState extends State<KelolaProdukScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
             child: const Text('Hapus Permanen'),
           ),
@@ -181,7 +184,8 @@ class _KelolaProdukScreenState extends State<KelolaProdukScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Produk "${produk.nama}" berhasil dihapus!'),
-            backgroundColor: Colors.teal,
+            backgroundColor: const Color(0xFF0284C7),
+            behavior: SnackBarBehavior.floating,
           ),
         );
         _muatProduk();
@@ -189,7 +193,11 @@ class _KelolaProdukScreenState extends State<KelolaProdukScreen> {
         if (!mounted) return;
         final pesan = e is InfoGalat ? e.pesan : e.toString();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(pesan), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text(pesan),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     }
@@ -198,14 +206,18 @@ class _KelolaProdukScreenState extends State<KelolaProdukScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text('Kelola Produk (Mode UTS)'),
-        backgroundColor: Colors.teal,
+        title: const Text(
+          'Kelola Produk (Mode UTS)',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: const Color(0xFF005B82),
         foregroundColor: Colors.white,
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _bukaFormProduk(),
-        backgroundColor: Colors.teal,
+        backgroundColor: const Color(0xFF005B82),
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
         label: const Text('Tambah Produk'),
@@ -220,7 +232,7 @@ class _KelolaProdukScreenState extends State<KelolaProdukScreen> {
               controller: _searchController,
               decoration: InputDecoration(
                 hintText: 'Cari produk obat atau alkes...',
-                prefixIcon: const Icon(Icons.search, color: Colors.teal),
+                prefixIcon: const Icon(Icons.search, color: Color(0xFF0284C7)),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
                         icon: const Icon(Icons.clear),
@@ -239,10 +251,10 @@ class _KelolaProdukScreenState extends State<KelolaProdukScreen> {
                 ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide(color: Colors.teal.shade200),
+                  borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
                 ),
                 filled: true,
-                fillColor: Colors.grey.shade50,
+                fillColor: const Color(0xFFF8FAFC),
               ),
               onSubmitted: (_) => _muatProduk(),
             ),
@@ -263,7 +275,13 @@ class _KelolaProdukScreenState extends State<KelolaProdukScreen> {
                 return ChoiceChip(
                   label: Text(kat),
                   selected: isSelected,
-                  selectedColor: Colors.teal,
+                  selectedColor: const Color(0xFF005B82),
+                  backgroundColor: Colors.white,
+                  side: BorderSide(
+                    color: isSelected
+                        ? const Color(0xFF005B82)
+                        : const Color(0xFFE2E8F0),
+                  ),
                   labelStyle: TextStyle(
                     color: isSelected ? Colors.white : Colors.black87,
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
@@ -304,7 +322,7 @@ class _KelolaProdukScreenState extends State<KelolaProdukScreen> {
                             height: 24,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: Colors.teal,
+                              color: Color(0xFF0284C7),
                             ),
                           ),
                         ),
@@ -342,7 +360,7 @@ class _KelolaProdukScreenState extends State<KelolaProdukScreen> {
                                   decoration: BoxDecoration(
                                     color: isDisabled
                                         ? Colors.grey.shade200
-                                        : Colors.teal.shade50,
+                                        : const Color(0xFFE0F2FE),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   clipBehavior: Clip.antiAlias,
@@ -358,7 +376,7 @@ class _KelolaProdukScreenState extends State<KelolaProdukScreen> {
                                                   : Icons.medical_services_outlined,
                                               color: isDisabled
                                                   ? Colors.grey
-                                                  : Colors.teal,
+                                                  : const Color(0xFF0284C7),
                                               size: 28,
                                             ),
                                           )
@@ -368,7 +386,7 @@ class _KelolaProdukScreenState extends State<KelolaProdukScreen> {
                                                 : Icons.medical_services_outlined,
                                             color: isDisabled
                                                 ? Colors.grey
-                                                : Colors.teal,
+                                                : const Color(0xFF0284C7),
                                             size: 28,
                                           );
                                   }(),
@@ -398,7 +416,7 @@ class _KelolaProdukScreenState extends State<KelolaProdukScreen> {
                                           fontWeight: FontWeight.w600,
                                           color: isDisabled
                                               ? Colors.grey
-                                              : Colors.teal.shade800,
+                                              : const Color(0xFF0284C7),
                                         ),
                                       ),
                                     ],

@@ -62,6 +62,26 @@ class SesiAuth {
 
   /// Dipanggil setiap sesi berubah (login/logout) agar UI bisa membangun ulang.
   static void Function()? onBerubah;
+  static final List<void Function()> _listeners = [];
+
+  static void tambahListener(void Function() listener) {
+    if (!_listeners.contains(listener)) {
+      _listeners.add(listener);
+    }
+  }
+
+  static void hapusListener(void Function() listener) {
+    _listeners.remove(listener);
+  }
+
+  static void _beritahuPerubahan() {
+    onBerubah?.call();
+    for (final l in List<void Function()>.from(_listeners)) {
+      try {
+        l();
+      } catch (_) {}
+    }
+  }
 
   static String? get token => _token;
   static ProfilPengguna? get pengguna => _pengguna;
@@ -95,7 +115,7 @@ class SesiAuth {
     await prefs.setString(_kunciToken, token);
     await prefs.setString(_kunciPengguna, jsonEncode(pengguna));
 
-    onBerubah?.call();
+    _beritahuPerubahan();
   }
 
   /// Perbarui data profil (mis. setelah edit foto) tanpa mengganti token.
@@ -105,7 +125,7 @@ class SesiAuth {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_kunciPengguna, jsonEncode(pengguna));
 
-    onBerubah?.call();
+    _beritahuPerubahan();
   }
 
   static Future<void> keluar() async {
@@ -116,6 +136,6 @@ class SesiAuth {
     await prefs.remove(_kunciToken);
     await prefs.remove(_kunciPengguna);
 
-    onBerubah?.call();
+    _beritahuPerubahan();
   }
 }
