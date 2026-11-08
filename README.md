@@ -6,7 +6,7 @@
 3.Risky Putra Adielia 24102020
 4.Muhamad Septiyan 24102035
 5.Sandy Agustiya Saputra 24102037
-6.Zayyan Muhammad Ihsan Syafatullah 24102039 
+6.Zayyan Muhammad Ihsan Syafatullah 24102039
 **Arsitektur:** REST API Laravel (Backend) + Flutter Mobile (Frontend)
 
 ---
@@ -102,3 +102,30 @@
 ## 7. Tautan Video Demo & Kelengkapan
 - **Video Demo Aplikasi & Pengujian 5 Jenis Galat:** `[Tautan Video Demo YouTube / GDrive]`
 - **Dokumentasi PDF Endpoint API:** Terlampir pada berkas PDF tugas.
+
+---
+
+## 8. Pernyataan Pemanfaatan Kecerdasan Buatan (AI Usage Statement)
+
+Sebagai bentuk transparansi akademik, proyek ini memanfaatkan kecerdasan buatan (*Artificial Intelligence* / AI) sebagai sarana asistensi dan akselerasi pengembangan (*AI-assisted development*):
+
+### 8.1. Alat AI yang Digunakan
+* **Google Gemini / Antigravity Agentic Assistant**: Digunakan sebagai mitra diskusi (*pair programmer*), asisten perancangan sistem, serta analisis galat.
+* **OpenCode**: Digunakan untuk penelusuran galat (*debugging*), analisis pesan *error*, dan perbaikan kendala pada kode program.
+
+### 8.2. Ruang Lingkup Pemanfaatan AI
+1. **Brainstorming & Arsitektur Domain:**
+   * Diskusi pemodelan aturan bisnis khusus apotek (validasi `perlu_resep`, batas beli per item, dan penanganan status transaksi).
+   * Asistensi formulasi konsep idempotensi transaksi menggunakan header `X-Kunci-Idempoten` dan UUID.
+2. **Asistensi Koding & Pembuatan Boilerplate:**
+   * Pembuatan struktur dasar skema migrasi basis data, seeder katalog obat awal, dan resource transformer pada Laravel.
+   * Penyusunan template *model*, *service* HTTP client, serta *state management* antarmuka di Flutter.
+3. **Debugging & Penanganan Galat:**
+   * Bantuan analisis pesan galat HTTP (`409 Conflict`, `422 Unprocessable Content`, `401 Unauthorized`).
+   * Pemeriksaan skenario simulasi penolakan sistem (5 variasi galat) agar sesuai standar penilaian UTS.
+4. **Dokumentasi Teknis:**
+   * Bantuan penyusunan dan perapian dokumen teknis, tabel endpoint REST API, serta representasi skema relasi ERD Notasi Peter Chen.
+
+### 8.3. Tanggung Jawab & Integritas Akademik
+* Pemanfaatan AI bersifat sebagai **alat bantu asistensi**, bukan pengganti pemahaman konseptual.
+* Seluruh integrasi API pihak ketiga (Google Sign-In, Xendit Gateway, RajaOngkir), konfigurasi lingkungan, pengujian fungsional di emulator dan server lokal, serta kode final telah dipelajari, divalidasi, dan **dipertanggungjawabkan sepenuhnya oleh tim penyusun**.
