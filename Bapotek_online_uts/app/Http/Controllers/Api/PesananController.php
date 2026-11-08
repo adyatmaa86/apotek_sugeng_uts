@@ -304,16 +304,18 @@ class PesananController extends BaseApiController
 
     private function cariTarifRajaOngkir(array $hasil, string $service): ?int
     {
+        $serviceUpper = strtoupper(trim($service));
+        $serviceClean = trim(preg_replace('/^(jne|pos|tiki)\s+/i', '', $serviceUpper));
+
         foreach ($hasil as $kurir) {
             foreach (($kurir['costs'] ?? []) as $opsi) {
-                if (strtoupper((string) ($opsi['service'] ?? '')) !== $service) {
-                    continue;
-                }
+                $opsiService = strtoupper(trim((string) ($opsi['service'] ?? '')));
+                if ($opsiService === $serviceUpper || $opsiService === $serviceClean) {
+                    $nilai = $opsi['cost'][0]['value'] ?? null;
 
-                $nilai = $opsi['cost'][0]['value'] ?? null;
-
-                if (is_numeric($nilai)) {
-                    return (int) $nilai;
+                    if (is_numeric($nilai)) {
+                        return (int) $nilai;
+                    }
                 }
             }
         }

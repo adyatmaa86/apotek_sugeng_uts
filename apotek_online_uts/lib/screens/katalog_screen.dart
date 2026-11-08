@@ -5,8 +5,9 @@ import '../services/layanan_api.dart';
 import '../utils/app_state.dart';
 import '../utils/url_berkas.dart';
 import '../widgets/widget_keadaan.dart';
-import 'keranjang_screen.dart';
+import 'beranda_screen.dart';
 import 'kelola_produk_screen.dart';
+import 'keranjang_screen.dart';
 import 'produk_detail_screen.dart';
 import 'profil_screen.dart';
 import 'riwayat_pesanan_screen.dart';
@@ -29,6 +30,7 @@ class _KatalogScreenState extends State<KatalogScreen> {
 
   int _jumlahItemKeranjang = 0;
   bool _modeUtsAktif = false;
+  int _navIndex = 1; // Index 1: Kategori/Katalog
 
   final ScrollController _scrollController = ScrollController();
   int _halamanSekarang = 1;
@@ -42,18 +44,19 @@ class _KatalogScreenState extends State<KatalogScreen> {
     _muatData();
     _muatJumlahKeranjang();
     _muatConfig();
-    // Pantau perubahan sesi (login/logout) agar AppBar & keranjang langsung update.
-    SesiAuth.onBerubah = () {
-      if (!mounted) return;
-      setState(() {});
-      _muatJumlahKeranjang();
-      _muatConfig();
-    };
+    SesiAuth.tambahListener(_onSesiBerubah);
+  }
+
+  void _onSesiBerubah() {
+    if (!mounted) return;
+    setState(() {});
+    _muatJumlahKeranjang();
+    _muatConfig();
   }
 
   @override
   void dispose() {
-    SesiAuth.onBerubah = null;
+    SesiAuth.hapusListener(_onSesiBerubah);
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     _searchController.dispose();
@@ -157,449 +160,675 @@ class _KatalogScreenState extends State<KatalogScreen> {
     } catch (_) {}
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Apotek Sugeng',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: Colors.teal,
-        foregroundColor: Colors.white,
-        actions: [
-          if (_modeUtsAktif)
-            IconButton(
-              icon: const Icon(Icons.inventory_2_outlined),
-              tooltip: 'Kelola Produk (Mode UTS)',
-              onPressed: () async {
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const KelolaProdukScreen(),
-                  ),
-                );
-                _muatData();
-                _muatConfig();
-              },
-            ),
+  void _onBottomNavTapped(int index) async {
+    if (index == 1) {
+      setState(() => _navIndex = 1);
+      return;
+    }
 
-          IconButton(
-            icon: const Icon(Icons.receipt_long),
-            tooltip: 'Riwayat Pesanan',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const RiwayatPesananScreen(),
+    if (index == 0) {
+      await Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const BerandaScreen()),
+      );
+    } else if (index == 2) {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const KeranjangScreen()),
+      );
+    } else if (index == 3) {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const RiwayatPesananScreen()),
+      );
+    } else if (index == 4) {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const ProfilScreen()),
+      );
+    }
+
+    if (mounted) {
+      setState(() => _navIndex = 1);
+      _muatJumlahKeranjang();
+      _muatData();
+    }
+  }
+
+  Widget _buildTopAppBar() {
+    final fotoUrl = UrlBerkas.dari(SesiAuth.pengguna?.fotoUrl);
+    final namaPengguna = SesiAuth.pengguna?.nama ?? 'Pelanggan';
+
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: const [
+              Text(
+                'Apotek Sugeng',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF64748B),
+                  letterSpacing: 0.3,
                 ),
-              );
-            },
+              ),
+              SizedBox(height: 2),
+              Text(
+                'Katalog Produk',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF0F172A),
+                ),
+              ),
+            ],
           ),
-
-          Stack(
-            alignment: Alignment.center,
+          Row(
             children: [
+              if (_modeUtsAktif)
+                IconButton(
+                  icon: const Icon(
+                    Icons.inventory_2_outlined,
+                    color: Color(0xFF0284C7),
+                    size: 22,
+                  ),
+                  tooltip: 'Kelola Produk (Mode UTS)',
+                  onPressed: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const KelolaProdukScreen(),
+                      ),
+                    );
+                    _muatData();
+                    _muatConfig();
+                  },
+                ),
               IconButton(
-                icon: const Icon(Icons.shopping_cart),
-                tooltip: 'Keranjang Belanja',
-                onPressed: () async {
+                icon: const Icon(
+                  Icons.receipt_long_outlined,
+                  color: Color(0xFF334155),
+                  size: 22,
+                ),
+                tooltip: 'Riwayat Pesanan',
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const RiwayatPesananScreen(),
+                    ),
+                  );
+                },
+              ),
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  IconButton(
+                    icon: const Icon(
+                      Icons.shopping_bag_outlined,
+                      color: Color(0xFF334155),
+                      size: 22,
+                    ),
+                    tooltip: 'Keranjang Belanja',
+                    onPressed: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const KeranjangScreen(),
+                        ),
+                      );
+                      _muatData();
+                      _muatJumlahKeranjang();
+                    },
+                  ),
+                  if (_jumlahItemKeranjang > 0)
+                    Positioned(
+                      top: 4,
+                      right: 4,
+                      child: Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF0284C7),
+                          shape: BoxShape.circle,
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        child: Text(
+                          '$_jumlahItemKeranjang',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 8.5,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(width: 4),
+              InkWell(
+                borderRadius: BorderRadius.circular(20),
+                onTap: () async {
                   await Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const KeranjangScreen(),
+                      builder: (context) => const ProfilScreen(),
                     ),
                   );
-                  _muatData();
+                  if (!mounted) return;
+                  setState(() {});
                   _muatJumlahKeranjang();
                 },
-              ),
-              if (_jumlahItemKeranjang > 0)
-                Positioned(
-                  top: 6,
-                  right: 6,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(
-                      color: Colors.redAccent,
-                      shape: BoxShape.circle,
-                    ),
-                    constraints: const BoxConstraints(
-                      minWidth: 18,
-                      minHeight: 18,
-                    ),
-                    child: Text(
-                      '$_jumlahItemKeranjang',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-
-          // Tombol akun di paling kanan, tepat setelah ikon keranjang.
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: IconButton(
-              tooltip: 'Akun Saya',
-              onPressed: () async {
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ProfilScreen(),
-                  ),
-                );
-                if (!mounted) return;
-                // Sesi bisa saja berubah (login/keluar) -> muat ulang keranjang
-                // agar terhubung ke identitas yang benar (token baru/lama).
-                setState(() {});
-                _muatJumlahKeranjang();
-              },
-              icon: () {
-                final fotoUrl = UrlBerkas.dari(SesiAuth.pengguna?.fotoUrl);
-                return CircleAvatar(
-                  radius: 15,
-                  backgroundColor: Colors.white24,
-                  foregroundColor: Colors.white,
+                child: CircleAvatar(
+                  radius: 17,
+                  backgroundColor: const Color(0xFF0284C7),
                   backgroundImage: fotoUrl != null && fotoUrl.isNotEmpty
                       ? NetworkImage(fotoUrl)
                       : null,
                   child: fotoUrl == null || fotoUrl.isEmpty
-                      ? const Icon(Icons.account_circle, size: 30)
+                      ? Text(
+                          namaPengguna.isNotEmpty
+                              ? namaPengguna.substring(0, 1).toUpperCase()
+                              : 'A',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        )
                       : null,
-                );
-              }(),
-            ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
-      body: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            color: Colors.teal.shade50,
-            child: Column(
+    );
+  }
+
+  Widget _buildBottomNav() {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          top: BorderSide(color: Color(0xFFE2E8F0), width: 1),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0x08000000),
+            blurRadius: 10,
+            offset: Offset(0, -3),
+          ),
+        ],
+      ),
+      child: NavigationBar(
+        selectedIndex: _navIndex,
+        onDestinationSelected: _onBottomNavTapped,
+        backgroundColor: Colors.white,
+        indicatorColor: const Color(0xFFE0F2FE),
+        elevation: 0,
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        destinations: [
+          const NavigationDestination(
+            icon: Icon(Icons.home_outlined, color: Color(0xFF64748B)),
+            selectedIcon: Icon(Icons.home, color: Color(0xFF0284C7)),
+            label: 'Beranda',
+          ),
+          const NavigationDestination(
+            icon: Icon(Icons.grid_view_outlined, color: Color(0xFF64748B)),
+            selectedIcon: Icon(Icons.grid_view, color: Color(0xFF0284C7)),
+            label: 'Katalog',
+          ),
+          NavigationDestination(
+            icon: Stack(
+              clipBehavior: Clip.none,
               children: [
-                TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText: 'Cari obat, vitamin, atau alkes...',
-                    prefixIcon: const Icon(Icons.search, color: Colors.teal),
-                    suffixIcon: _searchController.text.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.clear),
-                            onPressed: () {
-                              _searchController.clear();
-                              _muatData();
-                            },
-                          )
-                        : null,
-                    filled: true,
-                    fillColor: Colors.white,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(30),
-                      borderSide: BorderSide.none,
+                const Icon(
+                  Icons.shopping_bag_outlined,
+                  color: Color(0xFF64748B),
+                ),
+                if (_jumlahItemKeranjang > 0)
+                  Positioned(
+                    top: -4,
+                    right: -6,
+                    child: Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF0284C7),
+                        shape: BoxShape.circle,
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 16,
+                        minHeight: 16,
+                      ),
+                      child: Text(
+                        '$_jumlahItemKeranjang',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 8.5,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
-                  onChanged: (_) => setState(() {}),
-                  onSubmitted: (_) => _muatData(),
-                ),
-                const SizedBox(height: 10),
-                SizedBox(
-                  height: 36,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: _kategoriList.length,
-                    separatorBuilder: (_, _) => const SizedBox(width: 8),
-                    itemBuilder: (context, index) {
-                      final kat = _kategoriList[index];
-                      final isSelected = kat == _kategoriDipilih;
-                      return ChoiceChip(
-                        label: Text(kat),
-                        selected: isSelected,
-                        selectedColor: Colors.teal,
-                        labelStyle: TextStyle(
-                          color: isSelected
-                              ? Colors.white
-                              : Colors.teal.shade800,
-                          fontWeight: isSelected
-                              ? FontWeight.bold
-                              : FontWeight.normal,
-                        ),
-                        onSelected: (selected) {
-                          if (selected) {
-                            setState(() {
-                              _kategoriDipilih = kat;
-                            });
-                            _muatData();
-                          }
-                        },
-                      );
-                    },
-                  ),
-                ),
               ],
             ),
+            selectedIcon: const Icon(
+              Icons.shopping_bag,
+              color: Color(0xFF0284C7),
+            ),
+            label: 'Keranjang',
           ),
+          const NavigationDestination(
+            icon: Icon(Icons.receipt_long_outlined, color: Color(0xFF64748B)),
+            selectedIcon: Icon(Icons.receipt_long, color: Color(0xFF0284C7)),
+            label: 'Riwayat',
+          ),
+          const NavigationDestination(
+            icon: Icon(Icons.person_outline, color: Color(0xFF64748B)),
+            selectedIcon: Icon(Icons.person, color: Color(0xFF0284C7)),
+            label: 'Profil',
+          ),
+        ],
+      ),
+    );
+  }
 
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: _muatData,
-              child: WidgetKeadaan(
-                keadaan: _keadaan,
-                galat: _galat,
-                pesanKosong: 'Tidak ada produk yang cocok dengan pencarian.',
-                onCobaLagi: _muatData,
-                child: ListView.builder(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.all(12),
-                  itemCount: _daftarProduk.length + (_hasMore ? 1 : 0),
-                  itemBuilder: (context, index) {
-                    if (index == _daftarProduk.length) {
-                      return const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 20),
-                        child: Center(
-                          child: SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.teal,
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildTopAppBar(),
+
+            // Bagian Pencarian & Kategori
+            Container(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+              color: Colors.white,
+              child: Column(
+                children: [
+                  Container(
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: TextField(
+                      controller: _searchController,
+                      decoration: InputDecoration(
+                        hintText: 'Cari obat, vitamin, atau alkes...',
+                        hintStyle: const TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF94A3B8),
+                        ),
+                        prefixIcon: const Icon(
+                          Icons.search_rounded,
+                          color: Color(0xFF64748B),
+                          size: 20,
+                        ),
+                        suffixIcon: _searchController.text.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(
+                                  Icons.close_rounded,
+                                  size: 18,
+                                  color: Color(0xFF64748B),
+                                ),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  _muatData();
+                                },
+                              )
+                            : null,
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                      ),
+                      onChanged: (_) => setState(() {}),
+                      onSubmitted: (_) => _muatData(),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    height: 36,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _kategoriList.length,
+                      separatorBuilder: (_, _) => const SizedBox(width: 8),
+                      itemBuilder: (context, index) {
+                        final kat = _kategoriList[index];
+                        final isSelected = kat == _kategoriDipilih;
+                        return ChoiceChip(
+                          label: Text(kat),
+                          selected: isSelected,
+                          selectedColor: const Color(0xFF005B82),
+                          backgroundColor: Colors.white,
+                          side: BorderSide(
+                            color: isSelected
+                                ? const Color(0xFF005B82)
+                                : const Color(0xFFE2E8F0),
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          labelStyle: TextStyle(
+                            color: isSelected
+                                ? Colors.white
+                                : const Color(0xFF475569),
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                            fontSize: 12,
+                          ),
+                          onSelected: (selected) {
+                            if (selected) {
+                              setState(() {
+                                _kategoriDipilih = kat;
+                              });
+                              _muatData();
+                            }
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: _muatData,
+                color: const Color(0xFF0284C7),
+                child: WidgetKeadaan(
+                  keadaan: _keadaan,
+                  galat: _galat,
+                  pesanKosong: 'Tidak ada produk yang cocok dengan pencarian.',
+                  onCobaLagi: _muatData,
+                  child: ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.all(16),
+                    itemCount: _daftarProduk.length + (_hasMore ? 1 : 0),
+                    itemBuilder: (context, index) {
+                      if (index == _daftarProduk.length) {
+                        return const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 20),
+                          child: Center(
+                            child: SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Color(0xFF0284C7),
+                              ),
                             ),
                           ),
-                        ),
-                      );
-                    }
+                        );
+                      }
 
-                    final produk = _daftarProduk[index];
-                    final isHabis = !produk.tersedia || produk.stok <= 0;
+                      final produk = _daftarProduk[index];
+                      final isHabis = !produk.tersedia || produk.stok <= 0;
 
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      elevation: 2,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(12),
-                        onTap: () async {
-                          await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  ProdukDetailScreen(produkId: produk.id),
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFFF1F5F9)),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x06000000),
+                              blurRadius: 10,
+                              offset: Offset(0, 4),
                             ),
-                          );
-                          if (!mounted) return;
-                          _muatData();
-                          _muatJumlahKeranjang();
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                width: 70,
-                                height: 70,
-                                decoration: BoxDecoration(
-                                  color: isHabis
-                                      ? Colors.grey.shade200
-                                      : Colors.teal.shade50,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                clipBehavior: Clip.antiAlias,
-                                child: () {
-                                  final fotoUrl = UrlBerkas.dari(produk.fotoUrl);
-                                  return fotoUrl != null && fotoUrl.isNotEmpty
-                                    ? Image.network(
-                                        fotoUrl,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (_, _, _) => Icon(
-                                          produk.kategori == 'Obat'
-                                              ? Icons.medication_liquid_outlined
-                                              : Icons.medical_services_outlined,
-                                          size: 38,
-                                          color: isHabis
-                                              ? Colors.grey
-                                              : Colors.teal,
-                                        ),
-                                      )
-                                    : Icon(
-                                        produk.kategori == 'Obat'
-                                            ? Icons.medication_liquid_outlined
-                                            : Icons.medical_services_outlined,
-                                        size: 38,
-                                        color: isHabis
-                                            ? Colors.grey
-                                            : Colors.teal,
-                                      );
-                                }(),
+                          ],
+                        ),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(16),
+                          onTap: () async {
+                            await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    ProdukDetailScreen(produkId: produk.id),
                               ),
-                              const SizedBox(width: 14),
-
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      produk.nama,
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: isHabis
-                                            ? Colors.grey
-                                            : Colors.black87,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Row(
-                                      children: [
-                                        Text(
-                                          formatRupiah(produk.harga),
-                                          style: TextStyle(
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.w600,
+                            );
+                            if (!mounted) return;
+                            _muatData();
+                            _muatJumlahKeranjang();
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  width: 76,
+                                  height: 76,
+                                  decoration: BoxDecoration(
+                                    color: isHabis
+                                        ? const Color(0xFFF1F5F9)
+                                        : const Color(0xFFE0F2FE),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  clipBehavior: Clip.antiAlias,
+                                  child: () {
+                                    final fotoUrl =
+                                        UrlBerkas.dari(produk.fotoUrl);
+                                    return fotoUrl != null &&
+                                            fotoUrl.isNotEmpty
+                                        ? Image.network(
+                                            fotoUrl,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (_, _, _) => Icon(
+                                              produk.kategori == 'Obat'
+                                                  ? Icons.medication_liquid_outlined
+                                                  : Icons.medical_services_outlined,
+                                              size: 38,
+                                              color: isHabis
+                                                  ? const Color(0xFF94A3B8)
+                                                  : const Color(0xFF0284C7),
+                                            ),
+                                          )
+                                        : Icon(
+                                            produk.kategori == 'Obat'
+                                                ? Icons.medication_liquid_outlined
+                                                : Icons.medical_services_outlined,
+                                            size: 38,
                                             color: isHabis
-                                                ? Colors.grey
-                                                : Colors.teal.shade700,
-                                          ),
+                                                ? const Color(0xFF94A3B8)
+                                                : const Color(0xFF0284C7),
+                                          );
+                                  }(),
+                                ),
+                                const SizedBox(width: 14),
+
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        produk.nama,
+                                        style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.bold,
+                                          color: isHabis
+                                              ? const Color(0xFF94A3B8)
+                                              : const Color(0xFF0F172A),
                                         ),
-                                        Text(
-                                          ' / ${produk.satuan}',
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Row(
+                                        children: [
+                                          Text(
+                                            formatRupiah(produk.harga),
+                                            style: TextStyle(
+                                              fontSize: 14.5,
+                                              fontWeight: FontWeight.bold,
+                                              color: isHabis
+                                                  ? const Color(0xFF94A3B8)
+                                                  : const Color(0xFF0284C7),
+                                            ),
                                           ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 6),
-                                    Wrap(
-                                      spacing: 6,
-                                      runSpacing: 4,
-                                      children: [
-                                        if (produk.perluResep)
+                                          Text(
+                                            ' / ${produk.satuan}',
+                                            style: const TextStyle(
+                                              fontSize: 11.5,
+                                              color: Color(0xFF64748B),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Wrap(
+                                        spacing: 6,
+                                        runSpacing: 4,
+                                        children: [
+                                          if (produk.perluResep)
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                horizontal: 6,
+                                                vertical: 2,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFFFEE2E2),
+                                                borderRadius:
+                                                    BorderRadius.circular(4),
+                                              ),
+                                              child: const Text(
+                                                'Perlu Resep',
+                                                style: TextStyle(
+                                                  fontSize: 10.5,
+                                                  color: Color(0xFFDC2626),
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ),
                                           Container(
                                             padding: const EdgeInsets.symmetric(
                                               horizontal: 6,
                                               vertical: 2,
                                             ),
                                             decoration: BoxDecoration(
-                                              color: Colors.red.shade100,
+                                              color: isHabis
+                                                  ? const Color(0xFFF1F5F9)
+                                                  : const Color(0xFFE0F2FE),
                                               borderRadius:
                                                   BorderRadius.circular(4),
                                             ),
-                                            child: const Text(
-                                              'Perlu Resep',
+                                            child: Text(
+                                              isHabis
+                                                  ? 'Stok Habis'
+                                                  : 'Stok: ${produk.stok}',
                                               style: TextStyle(
+                                                fontSize: 10.5,
+                                                color: isHabis
+                                                    ? const Color(0xFF64748B)
+                                                    : const Color(0xFF0284C7),
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ),
+                                          if (produk.golongan != null)
+                                            Text(
+                                              produk.golongan!,
+                                              style: const TextStyle(
                                                 fontSize: 11,
-                                                color: Colors.red,
-                                                fontWeight: FontWeight.bold,
+                                                color: Color(0xFF94A3B8),
+                                                fontStyle: FontStyle.italic,
                                               ),
                                             ),
-                                          ),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 6,
-                                            vertical: 2,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: isHabis
-                                                ? Colors.grey.shade300
-                                                : Colors.teal.shade50,
-                                            borderRadius: BorderRadius.circular(
-                                              4,
-                                            ),
-                                          ),
-                                          child: Text(
-                                            isHabis
-                                                ? 'Stok Habis'
-                                                : 'Stok: ${produk.stok}',
-                                            style: TextStyle(
-                                              fontSize: 11,
-                                              color: isHabis
-                                                  ? Colors.black54
-                                                  : Colors.teal.shade900,
-                                            ),
-                                          ),
-                                        ),
-                                        if (produk.golongan != null)
-                                          Text(
-                                            produk.golongan!,
-                                            style: const TextStyle(
-                                              fontSize: 11,
-                                              color: Colors.black45,
-                                              fontStyle: FontStyle.italic,
-                                            ),
-                                          ),
-                                      ],
-                                    ),
-                                  ],
+                                        ],
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
 
-                              IconButton(
-                                icon: Icon(
-                                  Icons.add_shopping_cart,
-                                  color: isHabis ? Colors.grey : Colors.teal,
-                                ),
-                                onPressed: isHabis
-                                    ? null
-                                    : () async {
-                                        try {
-                                          await LayananApi.tambahKeranjang(
-                                            produk.id,
-                                            1,
-                                          );
-                                          if (!context.mounted) return;
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            SnackBar(
-                                              content: Text(
-                                                '${produk.nama} ditambahkan ke keranjang',
-                                              ),
-                                              backgroundColor: Colors.teal,
-                                              duration: const Duration(
-                                                seconds: 1,
-                                              ),
-                                            ),
-                                          );
-                                          _muatJumlahKeranjang();
-                                        } catch (e) {
-                                          if (!context.mounted) return;
-                                          final pesan = e is InfoGalat
-                                              ? e.pesan
-                                              : e.toString();
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(
-                                                SnackBar(
-                                                  content: Text(pesan),
-                                                  backgroundColor: Colors.red,
+                                IconButton(
+                                  icon: Container(
+                                    padding: const EdgeInsets.all(7),
+                                    decoration: BoxDecoration(
+                                      color: isHabis
+                                          ? const Color(0xFFF1F5F9)
+                                          : const Color(0xFF0284C7),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Icon(
+                                      Icons.add_shopping_cart,
+                                      size: 18,
+                                      color: isHabis
+                                          ? const Color(0xFF94A3B8)
+                                          : Colors.white,
+                                    ),
+                                  ),
+                                  onPressed: isHabis
+                                      ? null
+                                      : () async {
+                                          try {
+                                            await LayananApi.tambahKeranjang(
+                                              produk.id,
+                                              1,
+                                            );
+                                            if (!context.mounted) return;
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                  '${produk.nama} ditambahkan ke keranjang',
                                                 ),
-                                              );
-                                        }
-                                      },
-                              ),
-                            ],
+                                                backgroundColor:
+                                                    const Color(0xFF0284C7),
+                                                duration: const Duration(
+                                                  seconds: 1,
+                                                ),
+                                                behavior:
+                                                    SnackBarBehavior.floating,
+                                              ),
+                                            );
+                                            _muatJumlahKeranjang();
+                                          } catch (e) {
+                                            if (!context.mounted) return;
+                                            final pesan = e is InfoGalat
+                                                ? e.pesan
+                                                : e.toString();
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              SnackBar(
+                                                content: Text(pesan),
+                                                backgroundColor: Colors.red,
+                                                behavior:
+                                                    SnackBarBehavior.floating,
+                                              ),
+                                            );
+                                          }
+                                        },
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
+      bottomNavigationBar: _buildBottomNav(),
     );
   }
 }

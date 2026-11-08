@@ -10,6 +10,7 @@ class WidgetKeadaan extends StatelessWidget {
   final InfoGalat? galat;
   final String pesanKosong;
   final IconData ikonKosong;
+  final Color? warnaTombol;
 
   const WidgetKeadaan({
     super.key,
@@ -19,6 +20,7 @@ class WidgetKeadaan extends StatelessWidget {
     this.galat,
     this.pesanKosong = 'Belum ada data tersedia.',
     this.ikonKosong = Icons.inbox_outlined,
+    this.warnaTombol,
   });
 
   @override
@@ -82,8 +84,11 @@ class WidgetKeadaan extends StatelessWidget {
                   icon: const Icon(Icons.refresh),
                   label: const Text('Coba Lagi'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.teal,
+                    backgroundColor: warnaTombol ?? const Color(0xFF0284C7),
                     foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
                 ),
             ],

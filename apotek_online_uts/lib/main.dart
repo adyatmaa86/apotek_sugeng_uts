@@ -23,7 +23,7 @@ class ApotekOnlineApp extends StatelessWidget {
       title: 'Apotek Sugeng',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF0284C7)),
         useMaterial3: true,
         scaffoldBackgroundColor: const Color(0xFFF8F9FA),
         appBarTheme: const AppBarTheme(elevation: 0, centerTitle: false),
