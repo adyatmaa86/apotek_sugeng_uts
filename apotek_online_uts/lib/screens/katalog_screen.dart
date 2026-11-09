@@ -583,76 +583,58 @@ class _KatalogScreenState extends State<KatalogScreen> {
 
                               return Container(
                                 decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: const Color(0xFFE2E8F0),
-                                  ),
-                                  boxShadow: const [
-                                    BoxShadow(
-                                      color: Color(0x05000000),
-                                      blurRadius: 8,
-                                      offset: Offset(0, 2),
-                                    ),
-                                  ],
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: const Color(0xFFE2E8F0),
                                 ),
-                                child: InkWell(
-                                  borderRadius: BorderRadius.circular(16),
-                                  onTap: () async {
-                                    await Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            ProdukDetailScreen(
-                                          produkId: produk.id,
-                                        ),
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Color(0x05000000),
+                                    blurRadius: 8,
+                                    offset: Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(16),
+                                onTap: () async {
+                                  await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => ProdukDetailScreen(
+                                        produkId: produk.id,
                                       ),
-                                    );
-                                    if (!mounted) return;
-                                    _muatData();
-                                    _muatJumlahKeranjang();
-                                  },
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      // Gambar Produk + Badge Resep / Kategori
-                                      Stack(
-                                        children: [
-                                          ClipRRect(
-                                            borderRadius:
-                                                const BorderRadius.vertical(
-                                              top: Radius.circular(15),
-                                            ),
-                                            child: Container(
-                                              height: 120,
-                                              width: double.infinity,
-                                              color: isHabis
-                                                  ? const Color(0xFFF1F5F9)
-                                                  : const Color(0xFFE0F2FE),
-                                              child: fotoUrl != null &&
-                                                      fotoUrl.isNotEmpty
-                                                  ? Image.network(
-                                                      fotoUrl,
-                                                      fit: BoxFit.cover,
-                                                      errorBuilder:
-                                                          (_, _, _) => Icon(
-                                                        produk.kategori == 'Obat'
-                                                            ? Icons
-                                                                .medication_liquid_outlined
-                                                            : Icons
-                                                                .medical_services_outlined,
-                                                        size: 40,
-                                                        color: isHabis
-                                                            ? const Color(
-                                                                0xFF94A3B8,
-                                                              )
-                                                            : const Color(
-                                                                0xFF0284C7,
-                                                              ),
-                                                      ),
-                                                    )
-                                                  : Icon(
+                                    ),
+                                  );
+                                  if (!mounted) return;
+                                  _muatData();
+                                  _muatJumlahKeranjang();
+                                },
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Gambar Produk + Badge Resep / Kategori
+                                    Stack(
+                                      children: [
+                                        ClipRRect(
+                                          borderRadius:
+                                              const BorderRadius.vertical(
+                                            top: Radius.circular(15),
+                                          ),
+                                          child: Container(
+                                            height: 120,
+                                            width: double.infinity,
+                                            color: isHabis
+                                                ? const Color(0xFFF1F5F9)
+                                                : const Color(0xFFE0F2FE),
+                                            child: fotoUrl != null &&
+                                                    fotoUrl.isNotEmpty
+                                                ? Image.network(
+                                                    fotoUrl,
+                                                    fit: BoxFit.cover,
+                                                    errorBuilder:
+                                                        (_, _, _) => Icon(
                                                       produk.kategori == 'Obat'
                                                           ? Icons
                                                               .medication_liquid_outlined
@@ -667,230 +649,244 @@ class _KatalogScreenState extends State<KatalogScreen> {
                                                               0xFF0284C7,
                                                             ),
                                                     ),
+                                                  )
+                                                : Icon(
+                                                    produk.kategori == 'Obat'
+                                                        ? Icons
+                                                            .medication_liquid_outlined
+                                                        : Icons
+                                                            .medical_services_outlined,
+                                                    size: 40,
+                                                    color: isHabis
+                                                        ? const Color(
+                                                            0xFF94A3B8,
+                                                          )
+                                                        : const Color(
+                                                            0xFF0284C7,
+                                                          ),
+                                                  ),
+                                          ),
+                                        ),
+                                        Positioned(
+                                          top: 8,
+                                          left: 8,
+                                          child: Container(
+                                            padding:
+                                                const EdgeInsets.symmetric(
+                                              horizontal: 6,
+                                              vertical: 2,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white
+                                                  .withValues(alpha: 0.92),
+                                              borderRadius:
+                                                  BorderRadius.circular(6),
+                                            ),
+                                            child: Text(
+                                              produk.kategori,
+                                              style: const TextStyle(
+                                                fontSize: 9,
+                                                fontWeight: FontWeight.bold,
+                                                color: Color(0xFF334155),
+                                              ),
                                             ),
                                           ),
+                                        ),
+                                        if (produk.perluResep)
                                           Positioned(
                                             top: 8,
-                                            left: 8,
+                                            right: 8,
                                             child: Container(
                                               padding:
                                                   const EdgeInsets.symmetric(
-                                                horizontal: 6,
+                                                horizontal: 5,
                                                 vertical: 2,
                                               ),
                                               decoration: BoxDecoration(
-                                                color: Colors.white
-                                                    .withValues(alpha: 0.92),
+                                                color: Colors.red.shade600,
                                                 borderRadius:
-                                                    BorderRadius.circular(6),
+                                                    BorderRadius.circular(4),
                                               ),
-                                              child: Text(
-                                                produk.kategori,
-                                                style: const TextStyle(
-                                                  fontSize: 9,
+                                              child: const Text(
+                                                'Resep',
+                                                style: TextStyle(
+                                                  fontSize: 8.5,
                                                   fontWeight: FontWeight.bold,
-                                                  color: Color(0xFF334155),
+                                                  color: Colors.white,
                                                 ),
                                               ),
                                             ),
                                           ),
-                                          if (produk.perluResep)
-                                            Positioned(
-                                              top: 8,
-                                              right: 8,
-                                              child: Container(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                  horizontal: 5,
-                                                  vertical: 2,
-                                                ),
-                                                decoration: BoxDecoration(
-                                                  color: Colors.red.shade600,
-                                                  borderRadius:
-                                                      BorderRadius.circular(4),
-                                                ),
-                                                child: const Text(
-                                                  'Resep',
-                                                  style: TextStyle(
-                                                    fontSize: 8.5,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: Colors.white,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                        ],
-                                      ),
+                                      ],
+                                    ),
 
-                                      // Detail Informasi Produk
-                                      Padding(
-                                        padding: const EdgeInsets.all(10),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              isHabis
-                                                  ? 'Stok Habis'
-                                                  : 'Stok: ${produk.stok} ${produk.satuan}',
-                                              style: TextStyle(
-                                                fontSize: 9.5,
-                                                color: isHabis
-                                                    ? Colors.red
-                                                    : const Color(0xFF64748B),
-                                                fontWeight: isHabis
-                                                    ? FontWeight.bold
-                                                    : FontWeight.normal,
-                                              ),
+                                    // Detail Informasi Produk
+                                    Padding(
+                                      padding: const EdgeInsets.all(10),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            isHabis
+                                                ? 'Stok Habis'
+                                                : 'Stok: ${produk.stok} ${produk.satuan}',
+                                            style: TextStyle(
+                                              fontSize: 9.5,
+                                              color: isHabis
+                                                  ? Colors.red
+                                                  : const Color(0xFF64748B),
+                                              fontWeight: isHabis
+                                                  ? FontWeight.bold
+                                                  : FontWeight.normal,
                                             ),
-                                            const SizedBox(height: 3),
-                                            Text(
-                                              produk.nama,
-                                              style: const TextStyle(
-                                                fontSize: 12.5,
-                                                fontWeight: FontWeight.bold,
-                                                color: Color(0xFF0F172A),
-                                                height: 1.2,
-                                              ),
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
+                                          ),
+                                          const SizedBox(height: 3),
+                                          Text(
+                                            produk.nama,
+                                            style: const TextStyle(
+                                              fontSize: 12.5,
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(0xFF0F172A),
+                                              height: 1.2,
                                             ),
-                                            const SizedBox(height: 6),
-                                            Row(
-                                              children: [
-                                                Expanded(
-                                                  child: Column(
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment
-                                                            .start,
-                                                    children: [
-                                                      Text(
-                                                        formatRupiah(
-                                                          produk.harga,
-                                                        ),
-                                                        style: const TextStyle(
-                                                          fontSize: 12.5,
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                          color:
-                                                              Color(0xFF0284C7),
-                                                        ),
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          const SizedBox(height: 6),
+                                          Row(
+                                            children: [
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment
+                                                          .start,
+                                                  children: [
+                                                    Text(
+                                                      formatRupiah(produk.harga),
+                                                      style: const TextStyle(
+                                                        fontSize: 12.5,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        color:
+                                                            Color(0xFF0284C7),
                                                       ),
-                                                      Text(
-                                                        '/${produk.satuan}',
-                                                        style: const TextStyle(
-                                                          fontSize: 9.5,
-                                                          color:
-                                                              Color(0xFF94A3B8),
-                                                        ),
+                                                    ),
+                                                    Text(
+                                                      '/${produk.satuan}',
+                                                      style: const TextStyle(
+                                                        fontSize: 9.5,
+                                                        color:
+                                                            Color(0xFF94A3B8),
                                                       ),
-                                                    ],
-                                                  ),
+                                                    ),
+                                                  ],
                                                 ),
-                                                InkWell(
-                                                  onTap: isHabis
-                                                      ? null
-                                                      : () async {
-                                                          try {
-                                                            await LayananApi
-                                                                .tambahKeranjang(
-                                                              produk.id,
-                                                              1,
-                                                            );
-                                                            if (!context.mounted) {
-                                                              return;
-                                                            }
-                                                            ScaffoldMessenger.of(
-                                                              context,
-                                                            ).showSnackBar(
-                                                              SnackBar(
-                                                                content: Text(
-                                                                  '${produk.nama} ditambahkan ke keranjang',
-                                                                ),
-                                                                backgroundColor:
-                                                                    const Color(
-                                                                  0xFF0284C7,
-                                                                ),
-                                                                duration:
-                                                                    const Duration(
-                                                                  seconds: 1,
-                                                                ),
-                                                                behavior:
-                                                                    SnackBarBehavior
-                                                                        .floating,
-                                                              ),
-                                                            );
-                                                            _muatJumlahKeranjang();
-                                                          } catch (e) {
-                                                            if (!context.mounted) {
-                                                              return;
-                                                            }
-                                                            final pesan = e
-                                                                    is InfoGalat
-                                                                ? e.pesan
-                                                                : e.toString();
-                                                            ScaffoldMessenger.of(
-                                                              context,
-                                                            ).showSnackBar(
-                                                              SnackBar(
-                                                                content: Text(
-                                                                  pesan,
-                                                                ),
-                                                                backgroundColor:
-                                                                    Colors.red,
-                                                                behavior:
-                                                                    SnackBarBehavior
-                                                                        .floating,
-                                                              ),
-                                                            );
+                                              ),
+                                              InkWell(
+                                                onTap: isHabis
+                                                    ? null
+                                                    : () async {
+                                                        try {
+                                                          await LayananApi
+                                                              .tambahKeranjang(
+                                                            produk.id,
+                                                            1,
+                                                          );
+                                                          if (!context.mounted) {
+                                                            return;
                                                           }
-                                                        },
-                                                  borderRadius:
-                                                      BorderRadius.circular(8),
-                                                  child: Container(
-                                                    width: 32,
-                                                    height: 32,
-                                                    decoration: BoxDecoration(
+                                                          ScaffoldMessenger.of(
+                                                            context,
+                                                          ).showSnackBar(
+                                                            SnackBar(
+                                                              content: Text(
+                                                                '${produk.nama} ditambahkan ke keranjang',
+                                                              ),
+                                                              backgroundColor:
+                                                                  const Color(
+                                                                0xFF0284C7,
+                                                              ),
+                                                              duration:
+                                                                  const Duration(
+                                                                seconds: 1,
+                                                              ),
+                                                              behavior:
+                                                                  SnackBarBehavior
+                                                                      .floating,
+                                                              ),
+                                                          );
+                                                          _muatJumlahKeranjang();
+                                                        } catch (e) {
+                                                          if (!context.mounted) {
+                                                            return;
+                                                          }
+                                                          final pesan = e
+                                                                  is InfoGalat
+                                                              ? e.pesan
+                                                              : e.toString();
+                                                          ScaffoldMessenger.of(
+                                                            context,
+                                                          ).showSnackBar(
+                                                            SnackBar(
+                                                              content: Text(
+                                                                pesan,
+                                                              ),
+                                                              backgroundColor:
+                                                                  Colors.red,
+                                                                behavior:
+                                                                  SnackBarBehavior
+                                                                      .floating,
+                                                            ),
+                                                          );
+                                                        }
+                                                      },
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                                child: Container(
+                                                  width: 32,
+                                                  height: 32,
+                                                  decoration: BoxDecoration(
+                                                    color: isHabis
+                                                        ? const Color(
+                                                            0xFFF1F5F9,
+                                                          )
+                                                        : const Color(
+                                                            0xFF0284C7,
+                                                          ),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                      8,
+                                                    ),
+                                                  ),
+                                                  child: Center(
+                                                    child: Icon(
+                                                      Icons.add,
                                                       color: isHabis
                                                           ? const Color(
-                                                              0xFFF1F5F9,
+                                                              0xFF94A3B8,
                                                             )
-                                                          : const Color(
-                                                              0xFF0284C7,
-                                                            ),
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                        8,
-                                                      ),
-                                                    ),
-                                                    child: Center(
-                                                      child: Icon(
-                                                        Icons.add,
-                                                        color: isHabis
-                                                            ? const Color(
-                                                                0xFF94A3B8,
-                                                              )
-                                                            : Colors.white,
-                                                        size: 18,
-                                                      ),
+                                                          : Colors.white,
+                                                      size: 18,
                                                     ),
                                                   ),
                                                 ),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ),
-                              );
-                            },
-                            childCount: _daftarProduk.length,
-                          ),
+                              ),
+                            );
+                          },
+                          childCount: _daftarProduk.length,
                         ),
                       ),
-                      if (_hasMore)
+                    ),
+                    if (_sedangMuatLebih)
                         const SliverToBoxAdapter(
                           child: Padding(
                             padding: EdgeInsets.symmetric(vertical: 20),
@@ -899,12 +895,16 @@ class _KatalogScreenState extends State<KatalogScreen> {
                                 width: 24,
                                 height: 24,
                                 child: CircularProgressIndicator(
-                                  strokeWidth: 2,
+                                  strokeWidth: 2.2,
                                   color: Color(0xFF0284C7),
                                 ),
                               ),
                             ),
                           ),
+                        )
+                      else
+                        const SliverToBoxAdapter(
+                          child: SizedBox(height: 16),
                         ),
                     ],
                   ),
