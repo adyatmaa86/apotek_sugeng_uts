@@ -637,42 +637,6 @@ class _ProfilScreenState extends State<ProfilScreen> {
                               ? null
                               : _editFotoProfil,
                         ),
-                        const Divider(height: 1, indent: 56, color: Color(0xFFF1F5F9)),
-                        ListTile(
-                          leading: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFEF3C7),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Icon(
-                              Icons.support_agent_rounded,
-                              color: Color(0xFFD97706),
-                              size: 20,
-                            ),
-                          ),
-                          title: const Text(
-                            'Bantuan Farmasi & Apoteker',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                            ),
-                          ),
-                          subtitle: const Text(
-                            'Konsultasi aturan pakai dan dosis obat',
-                            style: TextStyle(fontSize: 12),
-                          ),
-                          trailing: const Icon(Icons.chevron_right, size: 20),
-                          onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Hotline Apoteker SIPA: 0812-3456-7890'),
-                                backgroundColor: Color(0xFF0284C7),
-                                behavior: SnackBarBehavior.floating,
-                              ),
-                            );
-                          },
-                        ),
                       ],
                     ),
                   ),
