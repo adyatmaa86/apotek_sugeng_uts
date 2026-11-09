@@ -513,7 +513,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   @override
   Widget build(BuildContext context) {
     final fotoUrl = UrlBerkas.dari(SesiAuth.pengguna?.fotoUrl);
-    final namaPengguna = SesiAuth.pengguna?.nama ?? 'Ceo Adyatma86';
+    final namaPengguna = SesiAuth.pengguna?.nama ?? 'Tamu (Guest)';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),

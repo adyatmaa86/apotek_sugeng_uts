@@ -9,23 +9,25 @@ use Illuminate\Http\Request;
 class BaseApiController extends Controller
 {
     /**
-     * Identitas pelanggan UTS (mode tanpa autentikasi penuh).
-     * Tetap dipakai sebagai fallback agar aplikasi tetap jalan tanpa login.
-     */
-    protected const PELANGGAN_UTS = 'pelanggan_uts_01';
-
-    /**
      * Resolusi identitas pelanggan:
      * - Jika request membawa token Sanctum yang valid -> "user_{id}".
-     * - Jika tanpa token -> pelanggan_id tetap UTS (ketentuan tugas).
+     * - Jika tanpa token (Guest) -> diidentifikasi dari header X-Guest-Id atau alamat IP klien.
      */
     protected function pelangganId(Request $request): string
     {
         $user = $request->user('sanctum');
 
-        return $user !== null
-            ? 'user_' . $user->id
-            : self::PELANGGAN_UTS;
+        if ($user !== null) {
+            return 'user_' . $user->id;
+        }
+
+        // Mode Guest Murni: gunakan header X-Guest-Id bila dikirim, atau fallback hash IP
+        $guestId = $request->header('X-Guest-Id');
+        if (! empty($guestId)) {
+            return 'guest_' . preg_replace('/[^a-zA-Z0-9_-]/', '', $guestId);
+        }
+
+        return 'guest_' . substr(md5($request->ip() . $request->userAgent()), 0, 16);
     }
 
     /**

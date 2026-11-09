@@ -44,11 +44,7 @@ class AuthController extends BaseApiController
             'password' => $validated['password'], // otomatis ter-hash via cast
         ]);
 
-        return $this->sukses(
-            $this->bentukSesi($user, 'register'),
-            'Pendaftaran berhasil',
-            201,
-        );
+        return $this->sukses($this->bentukSesi($user, 'register', $request), 'Pendaftaran berhasil', 201);
     }
 
     /**
@@ -71,7 +67,7 @@ class AuthController extends BaseApiController
             return $this->gagal('Email atau password salah', 401);
         }
 
-        return $this->sukses($this->bentukSesi($user, 'login'), 'Login berhasil');
+        return $this->sukses($this->bentukSesi($user, 'login', $request), 'Login berhasil');
     }
 
     /**
@@ -115,7 +111,7 @@ class AuthController extends BaseApiController
             ],
         );
 
-        return $this->sukses($this->bentukSesi($user, 'google'), 'Login Google berhasil');
+        return $this->sukses($this->bentukSesi($user, 'google', $request), 'Login Google berhasil');
     }
 
     /**
@@ -178,9 +174,12 @@ class AuthController extends BaseApiController
      * Sebelum sesi dibentuk, keranjang mode tamu dipindahkan ke akun
      * sehingga barang yang ditambahkan sebelum login tidak hilang.
      */
-    protected function bentukSesi(User $user, string $perangkat): array
+    protected function bentukSesi(User $user, string $perangkat, ?Request $request = null): array
     {
-        $this->gabungkanKeranjang(self::PELANGGAN_UTS, 'user_' . $user->id);
+        if ($request !== null) {
+            $tamuId = $this->pelangganId($request);
+            $this->gabungkanKeranjang($tamuId, 'user_' . $user->id);
+        }
 
         $user->refresh();
 

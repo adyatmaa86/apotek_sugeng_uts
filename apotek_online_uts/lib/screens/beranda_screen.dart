@@ -556,7 +556,7 @@ class _BerandaScreenState extends State<BerandaScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final namaPengguna = SesiAuth.pengguna?.nama ?? 'Ceo Adyatma86';
+    final namaPengguna = SesiAuth.pengguna?.nama ?? 'Tamu (Guest)';
     final fotoUrl = UrlBerkas.dari(SesiAuth.pengguna?.fotoUrl);
 
     // KONDISI 1: Belum ada produk dan server gagal terhubung (Galat Sambungan / Timeout)
