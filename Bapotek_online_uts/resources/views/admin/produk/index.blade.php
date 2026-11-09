@@ -86,7 +86,7 @@
                     <td>
                         <div class="table-actions">
                             <a href="{{ route('admin.produk.edit', $p->id) }}" class="btn btn-secondary btn-sm">Edit</a>
-                            <form action="{{ route('admin.produk.destroy', $p->id) }}" method="POST" onsubmit="return confirm(@js('Hapus produk ' . $p->nama . '?'))">
+                            <form action="{{ route('admin.produk.destroy', $p->id) }}" method="POST" class="form-confirm" data-confirm-title="Hapus Produk?" data-confirm-text="{{ 'Apakah Anda yakin ingin menghapus produk ' . $p->nama . '?' }}" data-confirm-btn="Ya, Hapus!">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn btn-danger btn-sm">Hapus</button>

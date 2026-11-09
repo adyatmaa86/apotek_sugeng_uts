@@ -124,19 +124,19 @@
             <!-- Body -->
             <main class="admin-content">
                 @if(session('sukses'))
-                    <div class="alert alert-success">
+                    <div class="alert alert-success flash-alert" data-type="success" data-message="{{ session('sukses') }}">
                         {{ session('sukses') }}
                     </div>
                 @endif
 
                 @if(session('galat'))
-                    <div class="alert alert-danger">
+                    <div class="alert alert-danger flash-alert" data-type="error" data-message="{{ session('galat') }}">
                         {{ session('galat') }}
                     </div>
                 @endif
 
                 @if($errors->any())
-                    <div class="alert alert-danger">
+                    <div class="alert alert-danger flash-alert" data-type="error" data-message="{{ $errors->first() }}">
                         <ul style="margin: 0; padding-left: 20px;">
                             @foreach($errors->all() as $err)
                                 <li>{{ $err }}</li>

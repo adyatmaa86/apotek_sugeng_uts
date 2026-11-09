@@ -1,5 +1,67 @@
+import Swal from 'sweetalert2';
+
 // Script interaksi admin panel (modal, konfirmasi, dll)
 document.addEventListener('DOMContentLoaded', () => {
+    // 0. Toggle Password di halaman Login (dipisah dari blade)
+    const toggle = document.getElementById('togglePassword');
+    const input = document.getElementById('password');
+    const eye = document.getElementById('eyeIcon');
+    const eyeOff = document.getElementById('eyeOffIcon');
+
+    if (toggle && input && eye && eyeOff) {
+        toggle.addEventListener('click', function () {
+            const show = input.type === 'password';
+            input.type = show ? 'text' : 'password';
+            eye.style.display = show ? 'none' : 'block';
+            eyeOff.style.display = show ? 'block' : 'none';
+            toggle.setAttribute('aria-label', show ? 'Sembunyikan password' : 'Tampilkan password');
+        });
+    }
+
+    // 1. SweetAlert untuk Flash Messages (Sukses / Galat)
+    const flashAlerts = document.querySelectorAll('.flash-alert');
+    flashAlerts.forEach(el => {
+        const type = el.dataset.type || 'info';
+        const msg = el.dataset.message || el.textContent.trim();
+        if (msg) {
+            Swal.fire({
+                icon: type === 'success' ? 'success' : 'error',
+                title: type === 'success' ? 'Berhasil!' : 'Perhatian!',
+                text: msg,
+                confirmButtonColor: '#0284c7',
+                timer: 4000,
+                timerProgressBar: true,
+            });
+        }
+    });
+
+    // 2. SweetAlert untuk Konfirmasi Aksi Hapus / Ubah Status Form
+    document.querySelectorAll('.form-confirm').forEach(form => {
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const title = form.dataset.confirmTitle || 'Apakah Anda yakin?';
+            const text = form.dataset.confirmText || 'Tindakan ini tidak dapat dibatalkan.';
+            const confirmBtn = form.dataset.confirmBtn || 'Ya, Lanjutkan!';
+
+            Swal.fire({
+                title: title,
+                text: text,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: confirmBtn,
+                cancelButtonText: 'Batal',
+                reverseButtons: true,
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        });
+    });
+
     // Modal Kurir Form
     const modalKurir = document.getElementById('modalKurir');
     const btnBukaKurir = document.getElementById('btnBukaModalKurir');
