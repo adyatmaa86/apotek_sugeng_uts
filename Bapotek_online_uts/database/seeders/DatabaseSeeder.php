@@ -250,8 +250,8 @@ class DatabaseSeeder extends Seeder
             'golongan' => 'Alat Kesehatan Habis Pakai',
         ]);
 
-        // 3. TIGA CONTOH PESANAN AWAL (Status Berbeda: menunggu_pembayaran, dibayar, selesai)
-        // Pesanan 1: menunggu_pembayaran (COD)
+        // 3. TIGA CONTOH PESANAN AWAL (Status Berbeda: diproses [COD], dibayar, selesai)
+        // Pesanan 1: diproses (COD langsung diproses)
         $pesanan1 = Pesanan::create([
             'nomor_pesanan' => 'APT-20261104-1001',
             'pelanggan_id' => 'user_' . $userUts->id,
@@ -262,7 +262,7 @@ class DatabaseSeeder extends Seeder
             'subtotal' => 15000,
             'total' => 23000,
             'metode_pembayaran' => 'cod',
-            'status' => 'menunggu_pembayaran',
+            'status' => 'diproses',
             'nomor_resep' => null,
         ]);
         PesananDetail::create([
