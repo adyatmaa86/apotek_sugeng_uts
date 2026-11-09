@@ -306,10 +306,10 @@ class _BerandaScreenState extends State<BerandaScreen> {
                 width: 1.2,
               ),
             ),
-            child: const Icon(
-              Icons.local_hospital_rounded,
-              color: Color(0xFF0284C7),
-              size: 24,
+            clipBehavior: Clip.antiAlias,
+            child: Image.asset(
+              'assets/images/logo.png',
+              fit: BoxFit.cover,
             ),
           ),
           const SizedBox(width: 12),
