@@ -1,25 +1,22 @@
 # Proyek UTS: Toko Online Apotek & Alat Kesehatan
+**Nama Kelompok:** Pandawa + 1  
 **Mata Kuliah:** Sistem Terdistribusi & Pemrograman Aplikasi Perangkat Bergerak  
 **Arsitektur:** REST API Laravel (Backend) + Flutter Mobile (Frontend)
 
-<div align="center">
+## 1. Tim Penyusun
 
-### Tim Penyusun
-
-| No | Nama Mahasiswa | NIM |
-|:--:|:--------------:|:---:|
-| 1 | Achmad Helmy Aziz Adyatma | 24102001 |
-| 2 | Rifqi Bintang Syahputra | 24102017 |
-| 3 | Risky Putra Adielia | 24102020 |
-| 4 | Muhamad Septiyan | 24102035 |
-| 5 | Sandy Agustiya Saputra | 24102037 |
-| 6 | Zayyan Muhammad Ihsan Syafatullah | 24102039 |
-
-</div>
+| No | Nama Mahasiswa | NIM | Peran |
+|:--:|:--------------:|:---:|:-----:|
+| 1 | Achmad Helmy Aziz Adyatma | 24102001 | Project Manager |
+| 2 | Rifqi Bintang Syahputra | 24102017 | Backend Developer |
+| 3 | Risky Putra Adielia | 24102020 | Frontend Developer |
+| 4 | Muhamad Septiyan | 24102035 | UI/UX Designer |
+| 5 | Sandy Agustiya Saputra | 24102037 | Frontend Developer |
+| 6 | Zayyan Muhammad Ihsan Syafatullah | 24102039 | Backend Developer |
 
 ---
 
-## 1. Domain Bisnis & Aturan Khas
+## 2. Domain Bisnis & Aturan Khas
 - **Domain:** Toko Online Apotek & Alat Kesehatan.
 - **Aturan Bisnis Utama:**
   1. Produk obat berpenanda **`perlu_resep` = true** wajib menyertakan **Nomor Resep Dokter** saat checkout. Jika dikosongkan, pesanan **ditolak oleh server** dengan kode status `422 Unprocessable Content`.
@@ -29,25 +26,47 @@
 
 ---
 
-## 2. Cara Menjalankan Backend Laravel (`Bapotek_online_uts`)
+## 3. Cara Menjalankan Backend Laravel (`Bapotek_online_uts`)
 
 1. Masuk ke folder backend:
    ```bash
    cd Bapotek_online_uts
    ```
-2. Pastikan file `.env` sudah terkonfigurasi dengan database MySQL lokal (`apotek_online_uts`).
-3. Jalankan migrasi dan seeder data awal:
+2. Install dependensi PHP via Composer:
+   ```bash
+   composer install
+   ```
+3. Salin file konfigurasi environment:
+   ```bash
+   cp .env.example .env
+   ```
+4. Generate application key:
+   ```bash
+   php artisan key:generate
+   ```
+5. Pastikan file `.env` sudah terkonfigurasi dengan database MySQL lokal (`apotek_online_uts`):
+   ```env
+   DB_DATABASE=apotek_online_uts
+   DB_USERNAME=root
+   DB_PASSWORD=
+   ```
+6. Jalankan migrasi dan seeder data awal:
    ```bash
    php artisan migrate:fresh --seed
    ```
-4. Jalankan server Laravel:
+7. Install dependensi JavaScript dan build aset:
+   ```bash
+   npm install
+   npm run build
+   ```
+8. Jalankan server Laravel:
    ```bash
    php artisan serve --port=8000
    ```
 
 ---
 
-## 3. Cara Menjalankan Aplikasi Mobile Flutter (`apotek_online_uts`)
+## 4. Cara Menjalankan Aplikasi Mobile Flutter (`apotek_online_uts`)
 
 1. Masuk ke folder Flutter:
    ```bash
@@ -64,18 +83,39 @@
 
 ### Tempat Mengubah Alamat Server:
 - File: `apotek_online_uts/lib/services/layanan_api.dart`
-- Konstanta: `baseUrl`
-  - Default Emulator Android: `http://10.0.2.2:8000/api` (karena `localhost` merujuk ke internal emulator itu sendiri).
-  - Untuk Web / Windows App / HP Fisik via Wi-Fi: ubah ke `http://127.0.0.1:8000/api` atau `http://<IP-LAN-Laptop>:8000/api`.
+- Getter: `baseUrl` (baris 14-25)
 
 ---
 
-## 4. Pengenal Pelanggan (Statis Token)
-- Menggunakan `pelanggan_id = pelanggan_uts_01` secara terpadu antara Laravel dan Flutter untuk mempermudah penilaian dan pengujian dosen penguji.
+## 5. Alamat Server Saat Pengembangan & Alasan Penggunaan
+- **Alamat yang Digunakan:** `http://192.168.1.6:8000/api`
+- **Alasan Pemilihan:**
+  - Aplikasi diuji dan dijalankan langsung menggunakan **perangkat smartphone Android fisik (Real Device)** yang terhubung dalam satu jaringan Wi-Fi/LAN lokal dengan laptop server Laravel.
+  - Dengan IP LAN lokal `192.168.1.6`, smartphone fisik dapat langsung berkomunikasi dengan REST API Laravel tanpa hambatan firewall localhost.
+- **Panduan Pengujian untuk Dosen / Penguji:**
+  - **Jika Menggunakan Emulator Android Resmi (AVD):** Ganti `baseUrl` ke `http://10.0.2.2:8000/api` (karena IP `10.0.2.2` adalah perutean alias khusus virtual router emulator Android untuk mengakses `localhost` mesin host laptop).
+  - **Jika Menggunakan Desktop Windows / Web / iOS Simulator:** Gunakan `http://127.0.0.1:8000/api`.
 
 ---
 
-## 5. Ringkasan Endpoint REST API
+## 6. Akun Uji Coba Penguji (Demo Account & Mode Guest)
+- **Mode Guest Murni:** Saat aplikasi Flutter pertama kali dibuka tanpa login, pengguna berstatus sebagai **Tamu (Guest)** dengan keranjang belanja bersih mandiri.
+- **Akun Demo Penguji (Opsi Login):** Penguji dapat langsung masuk melalui menu **Akun Saya ➔ Masuk / Daftar Akun** menggunakan kredensial statis berikut:
+  - **Email:** `uts@apotek.test`
+  - **Password:** `12345678`
+  - **Nama Profil:** `Ceo Adyatma86`
+- **Data Statis yang Terhubung:** Setelah login dengan akun demo ini, sistem otomatis memuat 3 riwayat pesanan awal (status: `menunggu_pembayaran`, `dibayar`, dan `selesai` via Xendit) yang telah disediakan di database seeder.
+
+---
+
+## 7. Daftar Ringkas Endpoint REST API & Tautan Dokumentasi
+
+> **Tautan Dokumentasi Lengkap:**  
+> Rincian spesifikasi skema request, response JSON, dan parameter pengujian lengkap dapat dilihat pada:
+> - **Dokumentasi PDF Lengkap:** Terlampir pada berkas PDF tugas UTS (`Dokumentasi_API_Apotek_Sugeng.pdf`).
+> - **Collection / Uji Endpoint:** Sesuai standar routing di `Bapotek_online_uts/routes/api.php`.
+
+### Ringkasan Tabel Endpoint:
 
 | No | Metode | Jalur Endpoint | Keterangan |
 |---|---|---|---|
@@ -99,7 +139,7 @@
 
 ---
 
-## 6. Alur Status Transaksi & Idempotensi
+## 8. Alur Status Transaksi & Idempotensi
 1. **Siklus Status:**
    `menunggu_pembayaran` ➔ `menunggu_konfirmasi` ➔ `dibayar` ➔ `diproses` ➔ `dikirim` ➔ `selesai` (atau `dibatalkan` dari 2 status awal).
 2. **Idempotensi:**
@@ -107,20 +147,20 @@
 
 ---
 
-## 7. Kelengkapan
+## 9. Kelengkapan
 - **Dokumentasi PDF Endpoint API:** Terlampir pada berkas PDF tugas.
 
 ---
 
-## 8. Pernyataan Pemanfaatan Kecerdasan Buatan (AI Usage Statement)
+## 10. Pernyataan Pemanfaatan Kecerdasan Buatan (AI Usage Statement)
 
 Sebagai bentuk transparansi akademik, proyek ini memanfaatkan kecerdasan buatan (*Artificial Intelligence* / AI) sebagai sarana asistensi dan akselerasi pengembangan (*AI-assisted development*):
 
-### 8.1. Alat AI yang Digunakan
+### 10.1. Alat AI yang Digunakan
 * **Google Gemini / Antigravity Agentic Assistant**: Digunakan sebagai mitra diskusi (*pair programmer*), asisten perancangan sistem, serta analisis galat.
 * **OpenCode**: Digunakan untuk penelusuran galat (*debugging*), analisis pesan *error*, dan perbaikan kendala pada kode program.
 
-### 8.2. Ruang Lingkup Pemanfaatan AI
+### 10.2. Ruang Lingkup Pemanfaatan AI
 1. **Brainstorming & Arsitektur Domain:**
    * Diskusi pemodelan aturan bisnis khusus apotek (validasi `perlu_resep`, batas beli per item, dan penanganan status transaksi).
    * Asistensi formulasi konsep idempotensi transaksi menggunakan header `X-Kunci-Idempoten` dan UUID.
@@ -133,6 +173,7 @@ Sebagai bentuk transparansi akademik, proyek ini memanfaatkan kecerdasan buatan 
 4. **Dokumentasi Teknis:**
    * Bantuan penyusunan dan perapian dokumen teknis, tabel endpoint REST API, serta representasi skema relasi ERD Notasi Peter Chen.
 
-### 8.3. Tanggung Jawab & Integritas Akademik
+### 10.3. Tanggung Jawab & Integritas Akademik
 * Pemanfaatan AI bersifat sebagai **alat bantu asistensi**, bukan pengganti pemahaman konseptual.
 * Seluruh integrasi API pihak ketiga (Google Sign-In, Xendit Gateway, RajaOngkir), konfigurasi lingkungan, pengujian fungsional di emulator dan server lokal, serta kode final telah dipelajari, divalidasi, dan **dipertanggungjawabkan sepenuhnya oleh tim penyusun**.
+

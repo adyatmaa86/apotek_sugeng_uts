@@ -25,6 +25,17 @@ class DatabaseSeeder extends Seeder
     {
         $this->call(AdminUserSeeder::class);
 
+        // Buat Akun Demo Pelanggan (Ceo Adyatma86) untuk pengujian UTS
+        $userUts = \App\Models\User::firstOrCreate(
+            ['email' => 'uts@apotek.test'],
+            [
+                'name' => 'Ceo Adyatma86',
+                'password' => \Illuminate\Support\Facades\Hash::make('12345678'),
+                'is_admin' => false,
+                'email_verified_at' => now(),
+            ]
+        );
+
         if (Kurir::query()->exists() || Produk::query()->exists() || Pesanan::query()->exists()) {
             $this->command?->info('Seeder dilewati: data master atau pesanan sudah tersedia.');
             return;
@@ -243,7 +254,7 @@ class DatabaseSeeder extends Seeder
         // Pesanan 1: menunggu_pembayaran (COD)
         $pesanan1 = Pesanan::create([
             'nomor_pesanan' => 'APT-20261104-1001',
-            'pelanggan_id' => 'pelanggan_uts_01',
+            'pelanggan_id' => 'user_' . $userUts->id,
             'nama_penerima' => 'Ceo Adyatma86',
             'alamat' => 'Jl. Kaliurang KM 9, Sleman, DI Yogyakarta',
             'kurir_id' => $kurir1->id,
@@ -267,7 +278,7 @@ class DatabaseSeeder extends Seeder
         // Pesanan 2: dibayar (Transfer Manual) - ada resep dokter
         $pesanan2 = Pesanan::create([
             'nomor_pesanan' => 'APT-20261104-1002',
-            'pelanggan_id' => 'pelanggan_uts_01',
+            'pelanggan_id' => 'user_' . $userUts->id,
             'nama_penerima' => 'Ceo Adyatma86',
             'alamat' => 'Jl. Gejayan No. 45, Gondokusuman, Yogyakarta',
             'kurir_id' => $kurir2->id,
@@ -291,7 +302,7 @@ class DatabaseSeeder extends Seeder
         // Pesanan 3: selesai (Xendit)
         $pesanan3 = Pesanan::create([
             'nomor_pesanan' => 'APT-20261104-1003',
-            'pelanggan_id' => 'pelanggan_uts_01',
+            'pelanggan_id' => 'user_' . $userUts->id,
             'nama_penerima' => 'Ceo Adyatma86',
             'alamat' => 'Jl. Malioboro No. 12, Kota Yogyakarta',
             'kurir_id' => $kurir1->id,

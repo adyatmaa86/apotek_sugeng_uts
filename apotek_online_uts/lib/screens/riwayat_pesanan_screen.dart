@@ -569,7 +569,7 @@ class _RiwayatPesananScreenState extends State<RiwayatPesananScreen> {
   }
 
   Widget _buildTopHeader() {
-    final namaPengguna = SesiAuth.pengguna?.nama ?? 'Ceo Adyatma86';
+    final namaPengguna = SesiAuth.pengguna?.nama ?? 'Tamu (Guest)';
     final fotoUrl = UrlBerkas.dari(SesiAuth.pengguna?.fotoUrl);
 
     return Container(
