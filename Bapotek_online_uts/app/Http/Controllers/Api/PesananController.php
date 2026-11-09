@@ -167,6 +167,10 @@ class PesananController extends BaseApiController
                 $total = $subtotal + $ongkosKirim;
                 $nomorPesanan = 'APT-' . date('YmdHis') . '-' . strtoupper(Str::random(4));
 
+                // Status awal pesanan:
+                // Khusus COD langsung diloncat ke 'diproses' karena pembayaran dilakukan di tempat saat barang tiba.
+                $statusAwal = ($request->metode_pembayaran === 'cod') ? 'diproses' : 'menunggu_pembayaran';
+
                 // Buat Pesanan
                 $pesanan = Pesanan::create([
                     'nomor_pesanan' => $nomorPesanan,
@@ -178,7 +182,7 @@ class PesananController extends BaseApiController
                     'subtotal' => $subtotal,
                     'total' => $total,
                     'metode_pembayaran' => $request->metode_pembayaran,
-                    'status' => 'menunggu_pembayaran',
+                    'status' => $statusAwal,
                     'nomor_resep' => $request->nomor_resep,
                     'rajaongkir_service' => $rajaongkirService,
                 ]);
