@@ -71,7 +71,7 @@
                             <span style="color: #94a3b8; font-size: 0.85rem;">Tidak dapat dihapus</span>
                         @else
                             <form action="{{ route('admin.akun.destroy', $admin) }}" method="POST"
-                                onsubmit="return confirm('Hapus akun admin {{ $admin->name }}?');">
+                                class="form-confirm" data-confirm-title="Hapus Akun Admin?" data-confirm-text="Apakah Anda yakin ingin menghapus akun admin {{ $admin->name }}?" data-confirm-btn="Ya, Hapus!">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn btn-danger btn-sm">Hapus</button>

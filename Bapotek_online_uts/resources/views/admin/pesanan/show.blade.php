@@ -121,7 +121,10 @@
                 @foreach($aksiStatus[$pesanan->status] as [$target, $label, $btnClass])
                     <form action="{{ route('admin.pesanan.updateStatus', $pesanan->id) }}" method="POST"
                         style="margin-bottom: 10px;"
-                        onsubmit="return confirm('Ubah status pesanan menjadi {{ $target }}?');">
+                        class="form-confirm"
+                        data-confirm-title="Ubah Status Pesanan?"
+                        data-confirm-text="Status pesanan ini akan diperbarui menjadi '{{ strtoupper($target) }}'."
+                        data-confirm-btn="Ya, Ubah Status">
                         @csrf
                         @method('PATCH')
                         <input type="hidden" name="status" value="{{ $target }}">

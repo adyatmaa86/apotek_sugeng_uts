@@ -45,7 +45,7 @@
                                 data-url-update="{{ route('admin.kurir.update', $kurir->id) }}">
                                 Edit
                             </button>
-                            <form action="{{ route('admin.kurir.destroy', $kurir->id) }}" method="POST" onsubmit="return confirm(@js('Hapus kurir ' . $kurir->nama . '?'))">
+                            <form action="{{ route('admin.kurir.destroy', $kurir->id) }}" method="POST" class="form-confirm" data-confirm-title="Hapus Kurir?" data-confirm-text="{{ 'Apakah Anda yakin ingin menghapus kurir ' . $kurir->nama . '?' }}" data-confirm-btn="Ya, Hapus!">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn btn-danger btn-sm">Hapus</button>

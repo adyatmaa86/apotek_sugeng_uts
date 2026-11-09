@@ -61,13 +61,13 @@
                 <p class="login-card-sub">Gunakan akun admin yang terdaftar untuk melanjutkan ke dashboard.</p>
 
                 @if (session('sukses'))
-                    <div class="alert alert-success login-alert" role="status">
+                    <div class="alert alert-success login-alert flash-alert" data-type="success" data-message="{{ session('sukses') }}" role="status">
                         {{ session('sukses') }}
                     </div>
                 @endif
 
                 @if ($errors->any())
-                    <div class="alert alert-danger login-alert" role="alert">
+                    <div class="alert alert-danger login-alert flash-alert" data-type="error" data-message="{{ $errors->first() }}" role="alert">
                         {{ $errors->first() }}
                     </div>
                 @endif
@@ -160,26 +160,5 @@
             </section>
         </div>
     </main>
-
-    <script>
-        (function () {
-            const toggle = document.getElementById('togglePassword');
-            const input = document.getElementById('password');
-            const eye = document.getElementById('eyeIcon');
-            const eyeOff = document.getElementById('eyeOffIcon');
-
-            if (!toggle || !input || !eye || !eyeOff) {
-                return;
-            }
-
-            toggle.addEventListener('click', function () {
-                const show = input.type === 'password';
-                input.type = show ? 'text' : 'password';
-                eye.style.display = show ? 'none' : 'block';
-                eyeOff.style.display = show ? 'block' : 'none';
-                toggle.setAttribute('aria-label', show ? 'Sembunyikan password' : 'Tampilkan password');
-            });
-        })();
-    </script>
 </body>
 </html>

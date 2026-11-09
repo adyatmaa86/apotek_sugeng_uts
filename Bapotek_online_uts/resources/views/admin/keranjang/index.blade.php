@@ -10,7 +10,7 @@
             Menampilkan obat/alkes yang saat ini sedang disimpan di keranjang belanja oleh pelanggan melalui aplikasi Flutter.
         </p>
         @if($daftarKeranjang->isNotEmpty())
-        <form action="{{ route('admin.keranjang.clearAll') }}" method="POST" onsubmit="return confirm('Kosongkan semua isi keranjang pelanggan?')">
+        <form action="{{ route('admin.keranjang.clearAll') }}" method="POST" class="form-confirm" data-confirm-title="Kosongkan Semua Keranjang?" data-confirm-text="Semua isi keranjang belanja pelanggan di aplikasi Flutter akan dihapus!" data-confirm-btn="Ya, Kosongkan!">
             @csrf
             @method('DELETE')
             <button type="submit" class="btn btn-danger btn-sm">Kosongkan Semua Keranjang</button>
@@ -50,7 +50,7 @@
                     </td>
                     <td><small style="color: #64748b;">{{ $item->created_at->diffForHumans() }}</small></td>
                     <td>
-                        <form class="inline-form" action="{{ route('admin.keranjang.destroy', $item->id) }}" method="POST" onsubmit="return confirm('Hapus item ini dari keranjang?')">
+                        <form class="inline-form form-confirm" action="{{ route('admin.keranjang.destroy', $item->id) }}" method="POST" data-confirm-title="Hapus Item Keranjang?" data-confirm-text="Item obat ini akan dikeluarkan dari keranjang belanja pelanggan." data-confirm-btn="Ya, Hapus!">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="btn btn-danger btn-sm">Hapus</button>
