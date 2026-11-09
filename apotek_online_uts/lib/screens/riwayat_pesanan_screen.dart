@@ -730,8 +730,11 @@ class _RiwayatPesananScreenState extends State<RiwayatPesananScreen> {
               ),
               child: TextField(
                 controller: _pencarianController,
+                textAlignVertical: TextAlignVertical.center,
+                style: const TextStyle(fontSize: 13),
                 onChanged: (_) => setState(() {}),
                 decoration: InputDecoration(
+                  isDense: true,
                   hintText: 'Cari nomor nota atau pesanan...',
                   hintStyle: const TextStyle(
                     fontSize: 13,
@@ -756,7 +759,10 @@ class _RiwayatPesananScreenState extends State<RiwayatPesananScreen> {
                         )
                       : null,
                   border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 11,
+                  ),
                 ),
               ),
             ),

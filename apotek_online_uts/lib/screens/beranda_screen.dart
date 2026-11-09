@@ -725,8 +725,10 @@ class _BerandaScreenState extends State<BerandaScreen> {
                           ),
                           child: TextField(
                             controller: _searchController,
+                            textAlignVertical: TextAlignVertical.center,
                             style: const TextStyle(fontSize: 13),
                             decoration: InputDecoration(
+                              isDense: true,
                               hintText: 'Cari obat, vitamin, atau alat kesehatan...',
                               hintStyle: const TextStyle(
                                 color: Color(0xFF94A3B8),
@@ -748,6 +750,7 @@ class _BerandaScreenState extends State<BerandaScreen> {
                                   : null,
                               border: InputBorder.none,
                               contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12,
                                 vertical: 12,
                               ),
                             ),

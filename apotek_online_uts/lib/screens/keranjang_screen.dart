@@ -501,35 +501,16 @@ class _KeranjangScreenState extends State<KeranjangScreen> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Row(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Expanded(
-                                            child: Text(
-                                              produk?.nama ??
-                                                  'Produk #${item.produkId}',
-                                              style: const TextStyle(
-                                                fontSize: 13.5,
-                                                fontWeight: FontWeight.bold,
-                                                color: Color(0xFF0F172A),
-                                              ),
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                          InkWell(
-                                            onTap: () => _hapusItem(item),
-                                            child: const Padding(
-                                              padding: EdgeInsets.only(left: 6),
-                                              child: Icon(
-                                                Icons.delete_outline_rounded,
-                                                color: Color(0xFFEF4444),
-                                                size: 20,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
+                                      Text(
+                                        produk?.nama ??
+                                            'Produk #${item.produkId}',
+                                        style: const TextStyle(
+                                          fontSize: 13.5,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF0F172A),
+                                        ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
                                       const SizedBox(height: 3),
                                       Container(
@@ -571,63 +552,100 @@ class _KeranjangScreenState extends State<KeranjangScreen> {
                                   ),
                                 ),
 
-                                // Stepper Jumlah
-                                Container(
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFF8FAFC),
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(
-                                      color: const Color(0xFFE2E8F0),
-                                    ),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      InkWell(
-                                        onTap: () => _ubahJumlah(item, -1),
-                                        child: const Padding(
-                                          padding: EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 4,
-                                          ),
-                                          child: Icon(
-                                            Icons.remove,
-                                            size: 16,
-                                            color: Color(0xFF64748B),
-                                          ),
+                                const SizedBox(width: 8),
+
+                                // Stepper Jumlah & Tombol Hapus di sebelah kanannya
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Container(
+                                      height: 32,
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFF8FAFC),
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: const Color(0xFFE2E8F0),
                                         ),
                                       ),
-                                      Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 4,
-                                        ),
-                                        child: Text(
-                                          '${item.jumlah}',
-                                          style: const TextStyle(
-                                            fontSize: 12.5,
-                                            fontWeight: FontWeight.bold,
-                                            color: Color(0xFF0F172A),
-                                          ),
-                                        ),
-                                      ),
-                                      InkWell(
-                                        onTap: () => _ubahJumlah(item, 1),
-                                        child: Container(
-                                          margin: const EdgeInsets.all(2),
-                                          padding: const EdgeInsets.all(4),
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xFF0284C7),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
+                                        children: [
+                                          InkWell(
                                             borderRadius:
                                                 BorderRadius.circular(6),
+                                            onTap: () => _ubahJumlah(item, -1),
+                                            child: const SizedBox(
+                                              width: 28,
+                                              height: 32,
+                                              child: Center(
+                                                child: Icon(
+                                                  Icons.remove,
+                                                  size: 15,
+                                                  color: Color(0xFF64748B),
+                                                ),
+                                              ),
+                                            ),
                                           ),
-                                          child: const Icon(
-                                            Icons.add,
-                                            size: 14,
-                                            color: Colors.white,
+                                          SizedBox(
+                                            width: 26,
+                                            child: Text(
+                                              '${item.jumlah}',
+                                              textAlign: TextAlign.center,
+                                              style: const TextStyle(
+                                                fontSize: 12.5,
+                                                fontWeight: FontWeight.bold,
+                                                color: Color(0xFF0F172A),
+                                              ),
+                                            ),
                                           ),
+                                          InkWell(
+                                            borderRadius:
+                                                BorderRadius.circular(6),
+                                            onTap: () => _ubahJumlah(item, 1),
+                                            child: Container(
+                                              width: 26,
+                                              height: 26,
+                                              margin: const EdgeInsets.only(
+                                                right: 2,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFF0284C7),
+                                                borderRadius:
+                                                    BorderRadius.circular(6),
+                                              ),
+                                              child: const Center(
+                                                child: Icon(
+                                                  Icons.add,
+                                                  size: 14,
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    InkWell(
+                                      borderRadius: BorderRadius.circular(8),
+                                      onTap: () => _hapusItem(item),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(6),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFFEF2F2),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                        child: const Icon(
+                                          Icons.delete_outline_rounded,
+                                          color: Color(0xFFEF4444),
+                                          size: 18,
                                         ),
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
