@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -415,34 +416,44 @@ class LayananApi {
     int? kurirId,
     required String metodePembayaran,
     String? nomorResep,
+    File? fotoResep,
     String? rajaongkirDestination,
     String? rajaongkirService,
     String? rajaongkirCourier,
   }) async {
     try {
-      final body = {
-        'nama_penerima': namaPenerima,
-        'alamat': alamat,
-        'metode_pembayaran': metodePembayaran,
-        'kurir_id': ?kurirId,
-        if (nomorResep != null && nomorResep.trim().isNotEmpty)
-          'nomor_resep': nomorResep.trim(),
-        'rajaongkir_destination': ?rajaongkirDestination,
-        'rajaongkir_service': ?rajaongkirService,
-        'rajaongkir_courier': ?rajaongkirCourier,
-      };
+      final uri = Uri.parse('$baseUrl/checkout');
+      final permintaan = http.MultipartRequest('POST', uri)
+        ..headers.addAll(_headersAuth({
+          'X-Kunci-Idempoten': idempotencyKey,
+        }))
+        ..fields['nama_penerima'] = namaPenerima
+        ..fields['alamat'] = alamat
+        ..fields['metode_pembayaran'] = metodePembayaran;
 
-      final res = await http
-          .post(
-            Uri.parse('$baseUrl/checkout'),
-            headers: _headersAuth({
-              'Content-Type': 'application/json',
-              'X-Kunci-Idempoten': idempotencyKey,
-            }),
-            body: jsonEncode(body),
-          )
-          .timeout(timeoutDuration);
+      if (kurirId != null) {
+        permintaan.fields['kurir_id'] = kurirId.toString();
+      }
+      if (nomorResep != null && nomorResep.trim().isNotEmpty) {
+        permintaan.fields['nomor_resep'] = nomorResep.trim();
+      }
+      if (rajaongkirDestination != null) {
+        permintaan.fields['rajaongkir_destination'] = rajaongkirDestination;
+      }
+      if (rajaongkirService != null) {
+        permintaan.fields['rajaongkir_service'] = rajaongkirService;
+      }
+      if (rajaongkirCourier != null) {
+        permintaan.fields['rajaongkir_courier'] = rajaongkirCourier;
+      }
+      if (fotoResep != null) {
+        permintaan.files.add(
+          await http.MultipartFile.fromPath('foto_resep', fotoResep.path),
+        );
+      }
 
+      final streamed = await permintaan.send().timeout(timeoutDuration);
+      final res = await http.Response.fromStream(streamed);
       final data = _prosesResponse(res);
       return PesananModel.fromJson(data);
     } catch (e) {

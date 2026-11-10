@@ -58,6 +58,7 @@ class PesananModel {
   final String metodePembayaran;
   final String status;
   final String? nomorResep;
+  final String? fotoResep;
   final String? rajaongkirService;
   final String? xenditInvoiceId;
   final String? xenditPaymentUrl;
@@ -79,6 +80,7 @@ class PesananModel {
     required this.metodePembayaran,
     required this.status,
     this.nomorResep,
+    this.fotoResep,
     this.rajaongkirService,
     this.xenditInvoiceId,
     this.xenditPaymentUrl,
@@ -113,6 +115,7 @@ class PesananModel {
       metodePembayaran: json['metode_pembayaran'] ?? 'cod',
       status: json['status'] ?? 'menunggu_pembayaran',
       nomorResep: json['nomor_resep'],
+      fotoResep: json['foto_resep'],
       rajaongkirService: json['rajaongkir_service'],
       xenditInvoiceId: json['xendit_invoice_id'],
       xenditPaymentUrl: json['xendit_payment_url'],

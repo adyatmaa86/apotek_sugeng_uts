@@ -168,6 +168,20 @@
                         @endif
                     </div>
                 </div>
+                <div style="margin-bottom: 8px;">
+                    <strong style="color: #475569;">Foto Resep Dokter:</strong>
+                    <div style="margin-top: 6px;">
+                        @if($pesanan->foto_resep)
+                            <a href="{{ Storage::url($pesanan->foto_resep) }}" target="_blank">
+                                <img src="{{ Storage::url($pesanan->foto_resep) }}"
+                                     alt="Foto Resep"
+                                     style="max-width: 100%; max-height: 220px; border-radius: 8px; border: 1px solid #e2e8f0; cursor: pointer; object-fit: contain;">
+                            </a>
+                        @else
+                            <span style="color: #94a3b8; font-size: 0.85rem;">Tidak ada foto resep diunggah</span>
+                        @endif
+                    </div>
+                </div>
                 @if($pesanan->xendit_invoice_id)
                 <div style="margin-top: 12px; padding: 10px; background: #eef2ff; border-radius: 8px;">
                     <strong style="color: #4338ca; font-size: 0.85rem;">Xendit Invoice ID:</strong>

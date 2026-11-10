@@ -16,6 +16,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
@@ -58,14 +59,15 @@ class PesananController extends BaseApiController
 
         // 2. Validasi Input Form Checkout
         $validator = Validator::make($request->all(), [
-            'nama_penerima' => 'required|string|max:255',
-            'alamat' => 'required|string|max:500',
-            'kurir_id' => 'nullable|required_without:rajaongkir_destination|exists:kurirs,id',
-            'metode_pembayaran' => 'required|in:cod,transfer_manual,xendit',
-            'nomor_resep' => 'nullable|string|max:100',
+            'nama_penerima'          => 'required|string|max:255',
+            'alamat'                 => 'required|string|max:500',
+            'kurir_id'               => 'nullable|required_without:rajaongkir_destination|exists:kurirs,id',
+            'metode_pembayaran'      => 'required|in:cod,transfer_manual,xendit',
+            'nomor_resep'            => 'nullable|string|max:100',
+            'foto_resep'             => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
             'rajaongkir_destination' => 'nullable|string|max:20',
-            'rajaongkir_courier' => 'required_with:rajaongkir_destination|nullable|string|in:jne,pos,tiki',
-            'rajaongkir_service' => 'required_with:rajaongkir_destination|nullable|string|max:50',
+            'rajaongkir_courier'     => 'required_with:rajaongkir_destination|nullable|string|in:jne,pos,tiki',
+            'rajaongkir_service'     => 'required_with:rajaongkir_destination|nullable|string|max:50',
         ], [
             'nama_penerima.required' => 'Nama penerima wajib diisi',
             'alamat.required' => 'Alamat pengiriman wajib diisi',
@@ -171,19 +173,26 @@ class PesananController extends BaseApiController
                 // Khusus COD langsung diloncat ke 'diproses' karena pembayaran dilakukan di tempat saat barang tiba.
                 $statusAwal = ($request->metode_pembayaran === 'cod') ? 'diproses' : 'menunggu_pembayaran';
 
+                // Upload foto resep jika ada
+                $pathFotoResep = null;
+                if ($request->hasFile('foto_resep') && $request->file('foto_resep')->isValid()) {
+                    $pathFotoResep = $request->file('foto_resep')->store('resep', 'public');
+                }
+
                 // Buat Pesanan
                 $pesanan = Pesanan::create([
-                    'nomor_pesanan' => $nomorPesanan,
-                    'pelanggan_id' => $this->pelangganId($request),
-                    'nama_penerima' => $request->nama_penerima,
-                    'alamat' => $request->alamat,
-                    'kurir_id' => $request->filled('rajaongkir_destination') ? null : $request->kurir_id,
-                    'ongkos_kirim' => $ongkosKirim,
-                    'subtotal' => $subtotal,
-                    'total' => $total,
-                    'metode_pembayaran' => $request->metode_pembayaran,
-                    'status' => $statusAwal,
-                    'nomor_resep' => $request->nomor_resep,
+                    'nomor_pesanan'    => $nomorPesanan,
+                    'pelanggan_id'     => $this->pelangganId($request),
+                    'nama_penerima'    => $request->nama_penerima,
+                    'alamat'           => $request->alamat,
+                    'kurir_id'         => $request->filled('rajaongkir_destination') ? null : $request->kurir_id,
+                    'ongkos_kirim'     => $ongkosKirim,
+                    'subtotal'         => $subtotal,
+                    'total'            => $total,
+                    'metode_pembayaran'=> $request->metode_pembayaran,
+                    'status'           => $statusAwal,
+                    'nomor_resep'      => $request->nomor_resep,
+                    'foto_resep'       => $pathFotoResep,
                     'rajaongkir_service' => $rajaongkirService,
                 ]);
 
