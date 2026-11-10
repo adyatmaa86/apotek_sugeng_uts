@@ -295,22 +295,10 @@ class _BerandaScreenState extends State<BerandaScreen> {
       child: Row(
         children: [
           // Logo & Sapaan
-          Container(
+          Image.asset(
+            'assets/images/logo.png',
             width: 42,
             height: 42,
-            decoration: BoxDecoration(
-              color: const Color(0xFFE0F2FE),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: const Color(0xFFBAE6FD),
-                width: 1.2,
-              ),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: Image.asset(
-              'assets/images/logo.png',
-              fit: BoxFit.cover,
-            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -558,6 +546,9 @@ class _BerandaScreenState extends State<BerandaScreen> {
   Widget build(BuildContext context) {
     final namaPengguna = SesiAuth.pengguna?.nama ?? 'Tamu (Guest)';
     final fotoUrl = UrlBerkas.dari(SesiAuth.pengguna?.fotoUrl);
+    final produkAlatKesehatan = _daftarProduk
+        .where((p) => p.kategori == 'Alat Kesehatan')
+        .toList();
 
     // KONDISI 1: Belum ada produk dan server gagal terhubung (Galat Sambungan / Timeout)
     if (_daftarProduk.isEmpty && _keadaan == KeadaanMuat.galat) {
@@ -1437,7 +1428,7 @@ class _BerandaScreenState extends State<BerandaScreen> {
                       ),
                       const SizedBox(width: 6),
                       const Text(
-                        'Rekomendasi Medis',
+                        'Rekomendasi Alat Medis',
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
@@ -1468,14 +1459,14 @@ class _BerandaScreenState extends State<BerandaScreen> {
                 ),
               ),
 
-              // Daftar Produk Vertikal
-              if (_daftarProduk.isEmpty)
+              // Daftar Produk Vertikal - hanya Alat Kesehatan
+              if (produkAlatKesehatan.isEmpty)
                 const SliverToBoxAdapter(
                   child: Padding(
                     padding: EdgeInsets.all(40),
                     child: Center(
                       child: Text(
-                        'Tidak ada produk yang sesuai filter.',
+                        'Tidak ada alat kesehatan tersedia.',
                         style: TextStyle(color: Colors.grey),
                       ),
                     ),
@@ -1487,7 +1478,7 @@ class _BerandaScreenState extends State<BerandaScreen> {
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate(
                       (context, index) {
-                        if (index == _daftarProduk.length) {
+                        if (index == produkAlatKesehatan.length) {
                           return const Padding(
                             padding: EdgeInsets.symmetric(vertical: 20),
                             child: Center(
@@ -1503,7 +1494,7 @@ class _BerandaScreenState extends State<BerandaScreen> {
                           );
                         }
 
-                        final produk = _daftarProduk[index];
+                        final produk = produkAlatKesehatan[index];
                         final foto = UrlBerkas.dari(produk.fotoUrl);
                         final isHabis = !produk.tersedia || produk.stok <= 0;
 
@@ -1717,7 +1708,7 @@ class _BerandaScreenState extends State<BerandaScreen> {
                           ),
                         );
                       },
-                      childCount: _daftarProduk.length + (_hasMore ? 1 : 0),
+                      childCount: produkAlatKesehatan.length + (_hasMore ? 1 : 0),
                     ),
                   ),
                 ),

@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 
 import '../models/keranjang_model.dart';
@@ -31,6 +34,7 @@ class _CheckoutUtsScreenState extends State<CheckoutUtsScreen> {
   );
   final TextEditingController _alamatController = TextEditingController();
   final TextEditingController _resepController = TextEditingController();
+  File? _fotoResep;
 
   late final String _idempotencyKey;
 
@@ -62,6 +66,62 @@ class _CheckoutUtsScreenState extends State<CheckoutUtsScreen> {
 
   bool get _apakahAdaResep =>
       widget.keranjangData.items.any((item) => item.produk?.perluResep == true);
+
+  Future<void> _pilihFotoResep(ImageSource source) async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: source, imageQuality: 80);
+    if (picked != null && mounted) {
+      setState(() => _fotoResep = File(picked.path));
+    }
+  }
+
+  void _tampilkanPilihFoto() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: const Color(0xFFCBD5E1),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Upload Foto Resep Dokter',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            ),
+            const SizedBox(height: 12),
+            ListTile(
+              leading: const Icon(Icons.camera_alt_outlined, color: Color(0xFF0284C7)),
+              title: const Text('Ambil Foto dari Kamera'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pilihFotoResep(ImageSource.camera);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined, color: Color(0xFF0284C7)),
+              title: const Text('Pilih dari Galeri'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pilihFotoResep(ImageSource.gallery);
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
 
   int get _ongkir => _kurirDipilih?.tarif ?? 0;
 
@@ -121,7 +181,10 @@ class _CheckoutUtsScreenState extends State<CheckoutUtsScreen> {
         alamat: alamatLengkap,
         kurirId: _kurirDipilih!.id,
         metodePembayaran: _metodePembayaran,
-        nomorResep: _resepController.text.trim(),
+        nomorResep: _resepController.text.trim().isEmpty
+            ? null
+            : _resepController.text.trim(),
+        fotoResep: _fotoResep,
       );
 
       if (!mounted) return;
@@ -257,87 +320,6 @@ class _CheckoutUtsScreenState extends State<CheckoutUtsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Stepper / Status Banner
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF0F9FF),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: const Color(0xFFBAE6FD)),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 38,
-                      height: 38,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF0284C7),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.local_shipping_outlined,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Langkah 1 dari 2',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Color(0xFF64748B),
-                            ),
-                          ),
-                          Text(
-                            'Penerima & Pengiriman',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF0F172A),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: const Color(0xFFBAE6FD)),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.verified,
-                            color: Color(0xFF16A34A),
-                            size: 13,
-                          ),
-                          SizedBox(width: 4),
-                          Text(
-                            'Farmasi Resmi',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF0F172A),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 14),
-
               // Banner Pesan Galat (jika ada)
               if (_galatCheckout != null) ...[
                 Container(
@@ -464,10 +446,110 @@ class _CheckoutUtsScreenState extends State<CheckoutUtsScreen> {
                       validator: (v) {
                         if (_apakahAdaResep &&
                             (v == null || v.trim().isEmpty)) {
-                          return 'Keranjang memuat obat keras, nomor resep dokter wajib diisi';
+                          return 'Perlu Resep Dokter';
                         }
                         return null;
                       },
+                    ),
+                    const SizedBox(height: 10),
+                    // Upload Foto Resep
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Foto Resep Dokter',
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF334155),
+                          ),
+                        ),
+                        const Text(
+                          '(Opsional)',
+                          style: TextStyle(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF0284C7),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    GestureDetector(
+                      onTap: _tampilkanPilihFoto,
+                      child: Container(
+                        width: double.infinity,
+                        height: _fotoResep != null ? 180 : 90,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: _fotoResep != null
+                                ? const Color(0xFF0284C7)
+                                : const Color(0xFFCBD5E1),
+                            width: _fotoResep != null ? 1.5 : 1,
+                          ),
+                        ),
+                        child: _fotoResep != null
+                            ? Stack(
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(9),
+                                    child: Image.file(
+                                      _fotoResep!,
+                                      width: double.infinity,
+                                      height: 180,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                  Positioned(
+                                    top: 6,
+                                    right: 6,
+                                    child: GestureDetector(
+                                      onTap: () => setState(() => _fotoResep = null),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(4),
+                                        decoration: const BoxDecoration(
+                                          color: Colors.black54,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(
+                                          Icons.close,
+                                          color: Colors.white,
+                                          size: 16,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: const [
+                                  Icon(
+                                    Icons.add_photo_alternate_outlined,
+                                    color: Color(0xFF94A3B8),
+                                    size: 28,
+                                  ),
+                                  SizedBox(height: 6),
+                                  Text(
+                                    'Ketuk untuk upload foto resep',
+                                    style: TextStyle(
+                                      fontSize: 11.5,
+                                      color: Color(0xFF64748B),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Foto resep membantu apoteker memverifikasi obat Anda',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Color(0xFF94A3B8),
+                      ),
                     ),
                   ],
                 ),

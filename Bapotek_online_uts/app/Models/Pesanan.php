@@ -23,6 +23,7 @@ class Pesanan extends Model
         'metode_pembayaran',
         'status',
         'nomor_resep',
+        'foto_resep',
         'rajaongkir_service',
         'xendit_invoice_id',
         'xendit_payment_url',

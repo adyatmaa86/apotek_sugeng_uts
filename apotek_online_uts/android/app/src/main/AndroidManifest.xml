@@ -9,7 +9,7 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29"/>
     <uses-feature android:name="android.hardware.camera" android:required="false"/>
     <application
-        android:label="apotek_online_uts"
+        android:label="Apotek Sugeng"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="true">
