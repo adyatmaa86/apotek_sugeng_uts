@@ -60,8 +60,8 @@ class AdminProdukController extends Controller
             'foto' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:3072',
         ]);
 
-        $validated['perlu_resep'] = $request->has('perlu_resep');
-        $validated['tersedia'] = $request->has('tersedia');
+        $validated['perlu_resep'] = $request->boolean('perlu_resep');
+        $validated['tersedia'] = $request->boolean('tersedia');
         $validated['satuan'] = ($validated['satuan'] ?? null) ?: 'Pcs';
 
         if ($request->hasFile('foto')) {
@@ -93,8 +93,8 @@ class AdminProdukController extends Controller
             'foto' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:3072',
         ]);
 
-        $validated['perlu_resep'] = $request->has('perlu_resep');
-        $validated['tersedia'] = $request->has('tersedia');
+        $validated['perlu_resep'] = $request->boolean('perlu_resep');
+        $validated['tersedia'] = $request->boolean('tersedia');
         $validated['satuan'] = ($validated['satuan'] ?? null) ?: 'Pcs';
 
         if ($request->hasFile('foto')) {
@@ -124,4 +124,3 @@ class AdminProdukController extends Controller
         return redirect()->route('admin.produk.index')->with('sukses', 'Produk berhasil dihapus.');
     }
 }
-
