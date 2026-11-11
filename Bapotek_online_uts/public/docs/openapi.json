@@ -1,0 +1,380 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Apotek Sugeng API Documentation",
+    "description": "Dokumentasi Lengkap REST API Apotek Sugeng & Alat Kesehatan untuk Aplikasi Flutter dan Admin Dashboard.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "Server Utama"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "SanctumBearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Masukkan Token Sanctum setelah login/register"
+      }
+    }
+  },
+  "paths": {
+    "/api/config": {
+      "get": {
+        "tags": ["Config"],
+        "summary": "Mendapatkan status konfigurasi (Mode UTS & API Keys)",
+        "responses": {
+          "200": {
+            "description": "Berhasil mendapatkan konfigurasi"
+          }
+        }
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "tags": ["Autentikasi"],
+        "summary": "Pendaftaran akun customer baru",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["nama", "email", "password", "password_confirmation"],
+                "properties": {
+                  "nama": { "type": "string", "example": "Budi Santoso" },
+                  "email": { "type": "string", "example": "budi@example.com" },
+                  "telepon": { "type": "string", "example": "08123456789" },
+                  "alamat": { "type": "string", "example": "Jl. Merdeka No. 10" },
+                  "password": { "type": "string", "example": "password123" },
+                  "password_confirmation": { "type": "string", "example": "password123" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Registrasi berhasil" },
+          "422": { "description": "Validasi gagal" }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": ["Autentikasi"],
+        "summary": "Login customer",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": { "type": "string", "example": "budi@example.com" },
+                  "password": { "type": "string", "example": "password123" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Login berhasil, mengembalikan token bearer" },
+          "401": { "description": "Kredensial tidak valid" }
+        }
+      }
+    },
+    "/api/auth/google": {
+      "post": {
+        "tags": ["Autentikasi"],
+        "summary": "Login atau registrasi via Google Sign-In",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["id_token"],
+                "properties": {
+                  "id_token": { "type": "string" },
+                  "email": { "type": "string" },
+                  "nama": { "type": "string" },
+                  "foto": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Berhasil autentikasi Google" }
+        }
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "tags": ["Autentikasi"],
+        "summary": "Melihat profil pengguna saat ini",
+        "security": [{ "SanctumBearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Data user ditemukan" },
+          "401": { "description": "Unauthenticated" }
+        }
+      }
+    },
+    "/api/auth/profil": {
+      "post": {
+        "tags": ["Autentikasi"],
+        "summary": "Update profil & foto pengguna",
+        "security": [{ "SanctumBearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Profil berhasil diperbarui" }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "tags": ["Autentikasi"],
+        "summary": "Logout dan mencabut token saat ini",
+        "security": [{ "SanctumBearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Logout berhasil" }
+        }
+      }
+    },
+    "/api/produk": {
+      "get": {
+        "tags": ["Produk"],
+        "summary": "Mendapatkan daftar produk obat / alkes",
+        "parameters": [
+          { "name": "kategori", "in": "query", "schema": { "type": "string" } },
+          { "name": "cari", "in": "query", "schema": { "type": "string" } },
+          { "name": "page", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Daftar produk berhasil diambil" }
+        }
+      },
+      "post": {
+        "tags": ["Produk"],
+        "summary": "Menambahkan produk baru",
+        "responses": {
+          "201": { "description": "Produk berhasil dibuat" }
+        }
+      }
+    },
+    "/api/produk/{id}": {
+      "get": {
+        "tags": ["Produk"],
+        "summary": "Detail produk berdasarkan ID",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Data produk ditemukan" },
+          "404": { "description": "Produk tidak ditemukan" }
+        }
+      },
+      "put": {
+        "tags": ["Produk"],
+        "summary": "Update produk berdasarkan ID",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Produk berhasil diperbarui" }
+        }
+      },
+      "delete": {
+        "tags": ["Produk"],
+        "summary": "Hapus produk berdasarkan ID",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Produk berhasil dihapus" }
+        }
+      }
+    },
+    "/api/keranjang": {
+      "get": {
+        "tags": ["Keranjang"],
+        "summary": "Mendapatkan daftar keranjang belanja pengguna",
+        "responses": {
+          "200": { "description": "List item keranjang" }
+        }
+      },
+      "post": {
+        "tags": ["Keranjang"],
+        "summary": "Menambahkan produk ke keranjang",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["produk_id", "jumlah"],
+                "properties": {
+                  "produk_id": { "type": "integer", "example": 1 },
+                  "jumlah": { "type": "integer", "example": 2 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Item berhasil masuk ke keranjang" }
+        }
+      }
+    },
+    "/api/keranjang/{id}": {
+      "put": {
+        "tags": ["Keranjang"],
+        "summary": "Update jumlah item dalam keranjang",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["jumlah"],
+                "properties": {
+                  "jumlah": { "type": "integer", "example": 3 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Keranjang berhasil diperbarui" }
+        }
+      },
+      "delete": {
+        "tags": ["Keranjang"],
+        "summary": "Menghapus item dari keranjang",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Item berhasil dihapus" }
+        }
+      }
+    },
+    "/api/kurir": {
+      "get": {
+        "tags": ["Kurir & Ongkir"],
+        "summary": "Daftar kurir lokal apotek dan tarif wilayah",
+        "responses": {
+          "200": { "description": "Daftar kurir apotek" }
+        }
+      }
+    },
+    "/api/rajaongkir/provinsi": {
+      "get": {
+        "tags": ["Kurir & Ongkir"],
+        "summary": "Daftar provinsi (RajaOngkir)",
+        "responses": { "200": { "description": "List provinsi" } }
+      }
+    },
+    "/api/rajaongkir/kota": {
+      "get": {
+        "tags": ["Kurir & Ongkir"],
+        "summary": "Daftar seluruh kota (RajaOngkir)",
+        "responses": { "200": { "description": "List kota" } }
+      }
+    },
+    "/api/rajaongkir/ongkir": {
+      "post": {
+        "tags": ["Kurir & Ongkir"],
+        "summary": "Hitung ongkos kirim ekspedisi (JNE, POS, TIKI, dll)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["destination", "weight", "courier"],
+                "properties": {
+                  "origin": { "type": "string" },
+                  "destination": { "type": "string" },
+                  "weight": { "type": "integer", "example": 1000 },
+                  "courier": { "type": "string", "example": "jne" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Tarif ongkir ditemukan" } }
+      }
+    },
+    "/api/checkout": {
+      "post": {
+        "tags": ["Checkout & Pesanan"],
+        "summary": "Membuat pesanan baru (Checkout)",
+        "responses": {
+          "201": { "description": "Pesanan berhasil dibuat" }
+        }
+      }
+    },
+    "/api/pesanan": {
+      "get": {
+        "tags": ["Checkout & Pesanan"],
+        "summary": "Melihat riwayat pesanan",
+        "responses": {
+          "200": { "description": "Daftar pesanan" }
+        }
+      }
+    },
+    "/api/pesanan/{id}": {
+      "get": {
+        "tags": ["Checkout & Pesanan"],
+        "summary": "Detail pesanan berdasarkan ID",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Data detail pesanan" }
+        }
+      }
+    },
+    "/api/pesanan/{id}/status": {
+      "patch": {
+        "tags": ["Checkout & Pesanan"],
+        "summary": "Update status pesanan",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Status pesanan diubah" }
+        }
+      }
+    },
+    "/api/pesanan/{id}/xendit/status": {
+      "get": {
+        "tags": ["Checkout & Pesanan"],
+        "summary": "Cek status pembayaran Xendit Invoice",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Status invoice Xendit" }
+        }
+      }
+    },
+    "/api/xendit/callback": {
+      "post": {
+        "tags": ["Checkout & Pesanan"],
+        "summary": "Webhook / callback otomatis dari payment gateway Xendit",
+        "responses": {
+          "200": { "description": "Callback diproses" }
+        }
+      }
+    }
+  }
+}
+
