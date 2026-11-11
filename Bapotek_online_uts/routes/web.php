@@ -16,6 +16,11 @@ Route::get('/', function () {
     return redirect()->route('admin.dashboard');
 });
 
+// Swagger API Documentation (via NPM swagger-ui-dist)
+Route::get('/docs/api', function () {
+    return view('docs.swagger');
+})->name('docs.api');
+
 // Admin Panel Routes
 Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('login', [AdminAuthController::class, 'showLogin'])->name('login');
