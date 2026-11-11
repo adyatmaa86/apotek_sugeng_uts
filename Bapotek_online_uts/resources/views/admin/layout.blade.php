@@ -72,6 +72,12 @@
                         <span>Kelola Aplikasi</span>
                     </a>
                 </li>
+                <li class="sidebar-item">
+                    <a href="{{ route('docs.api') }}" target="_blank" class="sidebar-link">
+                        <span>📖</span>
+                        <span>Dokumentasi API</span>
+                    </a>
+                </li>
             </ul>
             <div class="sidebar-footer">
                 <form action="{{ route('admin.logout') }}" method="POST">
