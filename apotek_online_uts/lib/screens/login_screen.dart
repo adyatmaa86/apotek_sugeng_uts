@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
@@ -136,10 +137,16 @@ class _LoginScreenState extends State<LoginScreen>
       final google = GoogleSignIn.instance;
       await google.initialize(
         serverClientId: KonfigurasiAuth.googleWebClientId,
-        clientId: KonfigurasiAuth.googleAndroidClientId.isEmpty
-            ? null
-            : KonfigurasiAuth.googleAndroidClientId,
+        clientId: kIsWeb
+            ? KonfigurasiAuth.googleWebClientId
+            : null,
       );
+
+      // Bersihkan cache sesi lama di Android Credential Manager
+      // untuk mencegah error "[16] Account reauth failed"
+      try {
+        await google.signOut();
+      } catch (_) {}
 
       final akun = await google.authenticate();
       final otentikasi = akun.authentication;
