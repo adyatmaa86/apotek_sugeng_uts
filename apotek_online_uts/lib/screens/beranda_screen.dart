@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
+import '../controllers/auth_controller.dart';
+import '../controllers/beranda_controller.dart';
+import '../controllers/keranjang_controller.dart';
 import '../models/produk_model.dart';
 import '../services/layanan_api.dart';
 import '../utils/app_state.dart';
 import '../utils/url_berkas.dart';
+import '../widgets/nav_bar_bawah.dart';
 import '../widgets/widget_keadaan.dart';
 import 'katalog_screen.dart';
 import 'kelola_produk_screen.dart';
 import 'keranjang_screen.dart';
 import 'produk_detail_screen.dart';
 import 'profil_screen.dart';
-import 'riwayat_pesanan_screen.dart';
 
 class BerandaScreen extends StatefulWidget {
   const BerandaScreen({super.key});
@@ -20,144 +24,43 @@ class BerandaScreen extends StatefulWidget {
 }
 
 class _BerandaScreenState extends State<BerandaScreen> {
-  KeadaanMuat _keadaan = KeadaanMuat.memuat;
-  InfoGalat? _galat;
-  List<ProdukModel> _daftarProduk = [];
-
-  String _kategoriDipilih = 'Semua';
-  final List<String> _kategoriList = ['Semua', 'Obat', 'Alat Kesehatan'];
-  final TextEditingController _searchController = TextEditingController();
-
+  late final BerandaController _c;
   final ScrollController _scrollController = ScrollController();
-  int _halamanSekarang = 1;
-  bool _hasMore = true;
-  bool _sedangMuatLebih = false;
 
-  int _jumlahItemKeranjang = 0;
-  bool _modeUtsAktif = false;
-  int _navIndex = 0;
+  KeadaanMuat get _keadaan => _c.keadaan.value;
+  InfoGalat? get _galat => _c.galat.value;
+  List<ProdukModel> get _daftarProduk => _c.daftarProduk;
+  String get _kategoriDipilih => _c.kategoriDipilih.value;
+  List<String> get _kategoriList => _c.kategoriList;
+  TextEditingController get _searchController => _c.searchController;
+  bool get _hasMore => _c.hasMore.value;
+  bool get _modeUtsAktif => _c.modeUtsAktif.value;
+  int get _jumlahItemKeranjang => KeranjangController.to.totalItem;
 
   @override
   void initState() {
     super.initState();
+    _c = Get.put(BerandaController());
     _scrollController.addListener(_onScroll);
-    _muatData();
-    _muatJumlahKeranjang();
-    _muatConfig();
-
-    SesiAuth.tambahListener(_onSesiBerubah);
-  }
-
-  void _onSesiBerubah() {
-    if (!mounted) return;
-    setState(() {});
-    _muatJumlahKeranjang();
-    _muatConfig();
   }
 
   @override
   void dispose() {
-    SesiAuth.hapusListener(_onSesiBerubah);
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
-    _searchController.dispose();
     super.dispose();
   }
 
   void _onScroll() {
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 250) {
-      _muatLebih();
+      _c.muatLebih();
     }
   }
 
-  Future<void> _muatData() async {
-    setState(() {
-      _keadaan = KeadaanMuat.memuat;
-      _galat = null;
-      _halamanSekarang = 1;
-      _hasMore = true;
-      _sedangMuatLebih = false;
-    });
-
-    try {
-      final produk = await LayananApi.getProduk(
-        kategori: _kategoriDipilih,
-        cari: _searchController.text.trim(),
-        page: 1,
-        perPage: 10,
-      );
-      if (!mounted) return;
-
-      setState(() {
-        _daftarProduk = produk;
-        _hasMore = produk.length >= 10;
-        _keadaan = produk.isEmpty ? KeadaanMuat.kosong : KeadaanMuat.berhasil;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _galat = e is InfoGalat
-            ? e
-            : InfoGalat(jenis: JenisGalat.tidakAdaSambungan, pesan: e.toString());
-        _keadaan = KeadaanMuat.galat;
-      });
-    }
-  }
-
-  Future<void> _muatLebih() async {
-    if (_sedangMuatLebih || !_hasMore || _keadaan == KeadaanMuat.memuat) return;
-
-    setState(() => _sedangMuatLebih = true);
-
-    try {
-      final nextPage = _halamanSekarang + 1;
-      final itemsBaru = await LayananApi.getProduk(
-        kategori: _kategoriDipilih,
-        cari: _searchController.text.trim(),
-        page: nextPage,
-        perPage: 10,
-      );
-      if (!mounted) return;
-
-      setState(() {
-        _sedangMuatLebih = false;
-        if (itemsBaru.isEmpty) {
-          _hasMore = false;
-        } else {
-          _halamanSekarang = nextPage;
-          _daftarProduk.addAll(itemsBaru);
-          if (itemsBaru.length < 10) {
-            _hasMore = false;
-          }
-        }
-      });
-    } catch (_) {
-      if (mounted) setState(() => _sedangMuatLebih = false);
-    }
-  }
-
-  Future<void> _muatJumlahKeranjang() async {
-    try {
-      final keranjang = await LayananApi.getKeranjang();
-      if (mounted) {
-        setState(() {
-          _jumlahItemKeranjang = keranjang.totalItem;
-        });
-      }
-    } catch (_) {}
-  }
-
-  Future<void> _muatConfig() async {
-    try {
-      final config = await LayananApi.getAppConfig();
-      if (mounted) {
-        setState(() {
-          _modeUtsAktif = config['mode_uts'] == true;
-        });
-      }
-    } catch (_) {}
-  }
+  Future<void> _muatData() => _c.muatData();
+  Future<void> _muatConfig() => _c.muatConfig();
+  Future<void> _muatJumlahKeranjang() async {}
 
   String _formatRupiah(num angka) {
     final s = angka.toStringAsFixed(0);
@@ -210,42 +113,6 @@ class _BerandaScreenState extends State<BerandaScreen> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       );
-    }
-  }
-
-  void _onBottomNavTapped(int index) async {
-    if (index == 0) {
-      setState(() => _navIndex = 0);
-      return;
-    }
-
-    if (index == 1) {
-      await Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const KatalogScreen()),
-      );
-    } else if (index == 2) {
-      await Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const KeranjangScreen()),
-      );
-    } else if (index == 3) {
-      await Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const RiwayatPesananScreen()),
-      );
-    } else if (index == 4) {
-      await Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const ProfilScreen()),
-      );
-    }
-
-    if (mounted) {
-      setState(() => _navIndex = 0);
-      _muatJumlahKeranjang();
-      _muatData();
-      _muatConfig();
     }
   }
 
@@ -361,51 +228,55 @@ class _BerandaScreenState extends State<BerandaScreen> {
           Stack(
             clipBehavior: Clip.none,
             children: [
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: IconButton(
-                  icon: const Icon(
-                    Icons.shopping_bag_outlined,
-                    color: Color(0xFF334155),
-                    size: 22,
+              InkWell(
+                borderRadius: BorderRadius.circular(18),
+                onTap: () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const KeranjangScreen(),
+                    ),
+                  );
+                  _muatJumlahKeranjang();
+                  _muatData();
+                },
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
                   ),
-                  tooltip: 'Keranjang Belanja',
-                  onPressed: () async {
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const KeranjangScreen(),
-                      ),
-                    );
-                    _muatJumlahKeranjang();
-                    _muatData();
-                  },
+                  child: const Center(
+                    child: Icon(
+                      Icons.shopping_bag_outlined,
+                      color: Color(0xFF334155),
+                      size: 20,
+                    ),
+                  ),
                 ),
               ),
               if (_jumlahItemKeranjang > 0)
                 Positioned(
-                  top: 2,
-                  right: 2,
+                  top: -2,
+                  right: -2,
                   child: Container(
-                    padding: const EdgeInsets.all(4),
+                    padding: const EdgeInsets.all(3),
                     decoration: const BoxDecoration(
                       color: Color(0xFF0284C7),
                       shape: BoxShape.circle,
                     ),
                     constraints: const BoxConstraints(
-                      minWidth: 18,
-                      minHeight: 18,
+                      minWidth: 17,
+                      minHeight: 17,
                     ),
                     child: Text(
                       '$_jumlahItemKeranjang',
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 9,
+                        fontSize: 8.5,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -416,7 +287,8 @@ class _BerandaScreenState extends State<BerandaScreen> {
           const SizedBox(width: 8),
 
           // Profile Avatar
-          GestureDetector(
+          InkWell(
+            borderRadius: BorderRadius.circular(18),
             onTap: () async {
               await Navigator.push(
                 context,
@@ -424,11 +296,9 @@ class _BerandaScreenState extends State<BerandaScreen> {
                   builder: (context) => const ProfilScreen(),
                 ),
               );
-              setState(() {});
-              _muatJumlahKeranjang();
             },
             child: CircleAvatar(
-              radius: 19,
+              radius: 18,
               backgroundColor: const Color(0xFF0284C7),
               backgroundImage:
                   fotoUrl != null && fotoUrl.isNotEmpty
@@ -438,11 +308,11 @@ class _BerandaScreenState extends State<BerandaScreen> {
                   ? Text(
                       namaPengguna.isNotEmpty
                           ? namaPengguna.substring(0, 1).toUpperCase()
-                          : 'C',
+                          : 'T',
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
-                        fontSize: 15,
+                        fontSize: 14,
                       ),
                     )
                   : null,
@@ -453,109 +323,21 @@ class _BerandaScreenState extends State<BerandaScreen> {
     );
   }
 
-  Widget _buildBottomNav() {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          top: BorderSide(color: Color(0xFFE2E8F0), width: 1),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x08000000),
-            blurRadius: 10,
-            offset: Offset(0, -3),
-          ),
-        ],
-      ),
-      child: NavigationBar(
-        selectedIndex: _navIndex,
-        onDestinationSelected: _onBottomNavTapped,
-        backgroundColor: Colors.white,
-        indicatorColor: const Color(0xFFE0F2FE),
-        elevation: 0,
-        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-        destinations: [
-          const NavigationDestination(
-            icon: Icon(Icons.home_outlined, color: Color(0xFF64748B)),
-            selectedIcon: Icon(Icons.home, color: Color(0xFF0284C7)),
-            label: 'Beranda',
-          ),
-          const NavigationDestination(
-            icon: Icon(Icons.grid_view_outlined, color: Color(0xFF64748B)),
-            selectedIcon: Icon(Icons.grid_view, color: Color(0xFF0284C7)),
-            label: 'Katalog',
-          ),
-          NavigationDestination(
-            icon: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                const Icon(
-                  Icons.shopping_bag_outlined,
-                  color: Color(0xFF64748B),
-                ),
-                if (_jumlahItemKeranjang > 0)
-                  Positioned(
-                    top: -4,
-                    right: -6,
-                    child: Container(
-                      padding: const EdgeInsets.all(3),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF0284C7),
-                        shape: BoxShape.circle,
-                      ),
-                      constraints: const BoxConstraints(
-                        minWidth: 16,
-                        minHeight: 16,
-                      ),
-                      child: Text(
-                        '$_jumlahItemKeranjang',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 8.5,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            selectedIcon: const Icon(
-              Icons.shopping_bag,
-              color: Color(0xFF0284C7),
-            ),
-            label: 'Keranjang',
-          ),
-          const NavigationDestination(
-            icon: Icon(Icons.receipt_long_outlined, color: Color(0xFF64748B)),
-            selectedIcon: Icon(Icons.receipt_long, color: Color(0xFF0284C7)),
-            label: 'Riwayat',
-          ),
-          const NavigationDestination(
-            icon: Icon(Icons.person_outline, color: Color(0xFF64748B)),
-            selectedIcon: Icon(Icons.person, color: Color(0xFF0284C7)),
-            label: 'Profil',
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final namaPengguna = SesiAuth.pengguna?.nama ?? 'Tamu (Guest)';
-    final fotoUrl = UrlBerkas.dari(SesiAuth.pengguna?.fotoUrl);
-    final produkAlatKesehatan = _daftarProduk
-        .where((p) => p.kategori == 'Alat Kesehatan')
-        .toList();
+    return Obx(() {
+      final namaPengguna = AuthController.to.pengguna.value?.nama ?? 'Tamu (Guest)';
+      final fotoUrl = UrlBerkas.dari(AuthController.to.pengguna.value?.fotoUrl);
+      final produkAlatKesehatan = _daftarProduk
+          .where((p) => p.kategori == 'Alat Kesehatan')
+          .toList();
 
-    // KONDISI 1: Belum ada produk dan server gagal terhubung (Galat Sambungan / Timeout)
-    if (_daftarProduk.isEmpty && _keadaan == KeadaanMuat.galat) {
-      return Scaffold(
-        backgroundColor: const Color(0xFFF8FAFC),
-        body: SafeArea(
-          child: Column(
+      // KONDISI 1: Belum ada produk dan server gagal terhubung (Galat Sambungan / Timeout)
+      if (_daftarProduk.isEmpty && _keadaan == KeadaanMuat.galat) {
+        return Scaffold(
+          backgroundColor: const Color(0xFFF8FAFC),
+          body: SafeArea(
+            child: Column(
             children: [
               _buildTopHeader(namaPengguna, fotoUrl),
               Expanded(
@@ -581,7 +363,7 @@ class _BerandaScreenState extends State<BerandaScreen> {
             ],
           ),
         ),
-        bottomNavigationBar: _buildBottomNav(),
+        bottomNavigationBar: const NavBarBawah(currentIndex: 0),
       );
     }
 
@@ -614,7 +396,7 @@ class _BerandaScreenState extends State<BerandaScreen> {
             ],
           ),
         ),
-        bottomNavigationBar: _buildBottomNav(),
+        bottomNavigationBar: const NavBarBawah(currentIndex: 0),
       );
     }
 
@@ -745,7 +527,7 @@ class _BerandaScreenState extends State<BerandaScreen> {
                                 vertical: 12,
                               ),
                             ),
-                            onChanged: (_) => setState(() {}),
+                            onChanged: (_) {},
                             onSubmitted: (_) => _muatData(),
                           ),
                         ),
@@ -1113,8 +895,7 @@ class _BerandaScreenState extends State<BerandaScreen> {
                       final isSelected = kat == _kategoriDipilih;
                       return InkWell(
                         onTap: () {
-                          setState(() => _kategoriDipilih = kat);
-                          _muatData();
+                          _c.gantiKategori(kat);
                         },
                         borderRadius: BorderRadius.circular(20),
                         child: AnimatedContainer(
@@ -1739,7 +1520,8 @@ class _BerandaScreenState extends State<BerandaScreen> {
       ),
 
       // 8. Bottom Navigation Bar
-      bottomNavigationBar: _buildBottomNav(),
+      bottomNavigationBar: const NavBarBawah(currentIndex: 0),
     );
+    });
   }
 }
