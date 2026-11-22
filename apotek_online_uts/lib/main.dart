@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
+import 'controllers/auth_controller.dart';
+import 'controllers/keranjang_controller.dart';
 import 'screens/beranda_screen.dart';
-import 'utils/app_state.dart';
-import 'services/layanan_api.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Muat sesi login tersimpan (token Sanctum + profil) sebelum aplikasi jalan.
-  await SesiAuth.muat();
-  LayananApi.setToken(SesiAuth.token);
+  final authController = Get.put(AuthController());
+  await authController.muat();
+  Get.put(KeranjangController());
 
   runApp(const ApotekOnlineApp());
 }
@@ -19,7 +20,7 @@ class ApotekOnlineApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return GetMaterialApp(
       title: 'Apotek Sugeng',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
