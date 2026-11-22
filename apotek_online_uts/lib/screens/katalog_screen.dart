@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
+import '../controllers/auth_controller.dart';
+import '../controllers/katalog_controller.dart';
+import '../controllers/keranjang_controller.dart';
 import '../models/produk_model.dart';
 import '../services/layanan_api.dart';
 import '../utils/app_state.dart';
 import '../utils/url_berkas.dart';
+import '../widgets/nav_bar_bawah.dart';
 import '../widgets/widget_keadaan.dart';
-import 'beranda_screen.dart';
 import 'kelola_produk_screen.dart';
 import 'keranjang_screen.dart';
 import 'produk_detail_screen.dart';
@@ -20,184 +24,47 @@ class KatalogScreen extends StatefulWidget {
 }
 
 class _KatalogScreenState extends State<KatalogScreen> {
-  KeadaanMuat _keadaan = KeadaanMuat.memuat;
-  InfoGalat? _galat;
-  List<ProdukModel> _daftarProduk = [];
-
-  String _kategoriDipilih = 'Semua';
-  final List<String> _kategoriList = ['Semua', 'Obat', 'Alat Kesehatan'];
-  final TextEditingController _searchController = TextEditingController();
-
-  int _jumlahItemKeranjang = 0;
-  bool _modeUtsAktif = false;
-  int _navIndex = 1; // Index 1: Kategori/Katalog
-
+  late final KatalogController _c;
   final ScrollController _scrollController = ScrollController();
-  int _halamanSekarang = 1;
-  bool _hasMore = true;
-  bool _sedangMuatLebih = false;
+
+  KeadaanMuat get _keadaan => _c.keadaan.value;
+  InfoGalat? get _galat => _c.galat.value;
+  List<ProdukModel> get _daftarProduk => _c.daftarProduk;
+  String get _kategoriDipilih => _c.kategoriDipilih.value;
+  List<String> get _kategoriList => _c.kategoriList;
+  TextEditingController get _searchController => _c.searchController;
+  int get _jumlahItemKeranjang => KeranjangController.to.totalItem;
+  bool get _modeUtsAktif => _c.modeUtsAktif.value;
+  bool get _sedangMuatLebih => _c.sedangMuatLebih.value;
 
   @override
   void initState() {
     super.initState();
+    _c = Get.put(KatalogController());
     _scrollController.addListener(_onScroll);
-    _muatData();
-    _muatJumlahKeranjang();
-    _muatConfig();
-    SesiAuth.tambahListener(_onSesiBerubah);
-  }
-
-  void _onSesiBerubah() {
-    if (!mounted) return;
-    setState(() {});
-    _muatJumlahKeranjang();
-    _muatConfig();
   }
 
   @override
   void dispose() {
-    SesiAuth.hapusListener(_onSesiBerubah);
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
-    _searchController.dispose();
     super.dispose();
   }
 
   void _onScroll() {
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 200) {
-      _muatLebih();
+      _c.muatLebih();
     }
   }
 
-  Future<void> _muatData() async {
-    _muatConfig();
-    setState(() {
-      _keadaan = KeadaanMuat.memuat;
-      _galat = null;
-      _halamanSekarang = 1;
-      _hasMore = true;
-      _sedangMuatLebih = false;
-    });
-
-    try {
-      final produk = await LayananApi.getProduk(
-        kategori: _kategoriDipilih,
-        cari: _searchController.text,
-        page: 1,
-        perPage: 8,
-      );
-      if (!mounted) return;
-
-      setState(() {
-        _daftarProduk = produk;
-        _hasMore = produk.length >= 8;
-        _keadaan = produk.isEmpty ? KeadaanMuat.kosong : KeadaanMuat.berhasil;
-      });
-    } catch (e) {
-      if (!mounted) return;
-
-      setState(() {
-        _galat = e is InfoGalat
-            ? e
-            : InfoGalat(jenis: JenisGalat.lainnya, pesan: e.toString());
-        _keadaan = KeadaanMuat.galat;
-      });
-    }
-  }
-
-  Future<void> _muatLebih() async {
-    if (_sedangMuatLebih || !_hasMore || _keadaan == KeadaanMuat.memuat) return;
-
-    setState(() => _sedangMuatLebih = true);
-
-    try {
-      final nextPage = _halamanSekarang + 1;
-      final itemsBaru = await LayananApi.getProduk(
-        kategori: _kategoriDipilih,
-        cari: _searchController.text,
-        page: nextPage,
-        perPage: 8,
-      );
-      if (!mounted) return;
-
-      setState(() {
-        _sedangMuatLebih = false;
-        if (itemsBaru.isEmpty) {
-          _hasMore = false;
-        } else {
-          _halamanSekarang = nextPage;
-          _daftarProduk.addAll(itemsBaru);
-          if (itemsBaru.length < 8) {
-            _hasMore = false;
-          }
-        }
-      });
-    } catch (_) {
-      if (mounted) setState(() => _sedangMuatLebih = false);
-    }
-  }
-
-  Future<void> _muatJumlahKeranjang() async {
-    try {
-      final keranjang = await LayananApi.getKeranjang();
-      if (mounted) {
-        setState(() {
-          _jumlahItemKeranjang = keranjang.totalItem;
-        });
-      }
-    } catch (_) {}
-  }
-
-  Future<void> _muatConfig() async {
-    try {
-      final config = await LayananApi.getAppConfig();
-      if (mounted) {
-        setState(() {
-          _modeUtsAktif = config['mode_uts'] == true;
-        });
-      }
-    } catch (_) {}
-  }
-
-  void _onBottomNavTapped(int index) async {
-    if (index == 1) {
-      setState(() => _navIndex = 1);
-      return;
-    }
-
-    if (index == 0) {
-      await Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const BerandaScreen()),
-      );
-    } else if (index == 2) {
-      await Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const KeranjangScreen()),
-      );
-    } else if (index == 3) {
-      await Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const RiwayatPesananScreen()),
-      );
-    } else if (index == 4) {
-      await Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const ProfilScreen()),
-      );
-    }
-
-    if (mounted) {
-      setState(() => _navIndex = 1);
-      _muatJumlahKeranjang();
-      _muatData();
-    }
-  }
+  Future<void> _muatData() => _c.muatData();
+  Future<void> _muatJumlahKeranjang() async {}
+  Future<void> _muatConfig() => _c.muatConfig();
 
   Widget _buildTopAppBar() {
-    final fotoUrl = UrlBerkas.dari(SesiAuth.pengguna?.fotoUrl);
-    final namaPengguna = SesiAuth.pengguna?.nama ?? 'Pelanggan';
+    final fotoUrl = UrlBerkas.dari(AuthController.to.pengguna.value?.fotoUrl);
+    final namaPengguna = AuthController.to.pengguna.value?.nama ?? 'Tamu (Guest)';
 
     return Container(
       color: Colors.white,
@@ -323,12 +190,9 @@ class _KatalogScreenState extends State<KatalogScreen> {
                       builder: (context) => const ProfilScreen(),
                     ),
                   );
-                  if (!mounted) return;
-                  setState(() {});
-                  _muatJumlahKeranjang();
                 },
                 child: CircleAvatar(
-                  radius: 17,
+                  radius: 18,
                   backgroundColor: const Color(0xFF0284C7),
                   backgroundImage: fotoUrl != null && fotoUrl.isNotEmpty
                       ? NetworkImage(fotoUrl)
@@ -337,7 +201,7 @@ class _KatalogScreenState extends State<KatalogScreen> {
                       ? Text(
                           namaPengguna.isNotEmpty
                               ? namaPengguna.substring(0, 1).toUpperCase()
-                              : 'A',
+                              : 'T',
                           style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
@@ -354,98 +218,9 @@ class _KatalogScreenState extends State<KatalogScreen> {
     );
   }
 
-  Widget _buildBottomNav() {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          top: BorderSide(color: Color(0xFFE2E8F0), width: 1),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x08000000),
-            blurRadius: 10,
-            offset: Offset(0, -3),
-          ),
-        ],
-      ),
-      child: NavigationBar(
-        selectedIndex: _navIndex,
-        onDestinationSelected: _onBottomNavTapped,
-        backgroundColor: Colors.white,
-        indicatorColor: const Color(0xFFE0F2FE),
-        elevation: 0,
-        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-        destinations: [
-          const NavigationDestination(
-            icon: Icon(Icons.home_outlined, color: Color(0xFF64748B)),
-            selectedIcon: Icon(Icons.home, color: Color(0xFF0284C7)),
-            label: 'Beranda',
-          ),
-          const NavigationDestination(
-            icon: Icon(Icons.grid_view_outlined, color: Color(0xFF64748B)),
-            selectedIcon: Icon(Icons.grid_view, color: Color(0xFF0284C7)),
-            label: 'Katalog',
-          ),
-          NavigationDestination(
-            icon: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                const Icon(
-                  Icons.shopping_bag_outlined,
-                  color: Color(0xFF64748B),
-                ),
-                if (_jumlahItemKeranjang > 0)
-                  Positioned(
-                    top: -4,
-                    right: -6,
-                    child: Container(
-                      padding: const EdgeInsets.all(3),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF0284C7),
-                        shape: BoxShape.circle,
-                      ),
-                      constraints: const BoxConstraints(
-                        minWidth: 16,
-                        minHeight: 16,
-                      ),
-                      child: Text(
-                        '$_jumlahItemKeranjang',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 8.5,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            selectedIcon: const Icon(
-              Icons.shopping_bag,
-              color: Color(0xFF0284C7),
-            ),
-            label: 'Keranjang',
-          ),
-          const NavigationDestination(
-            icon: Icon(Icons.receipt_long_outlined, color: Color(0xFF64748B)),
-            selectedIcon: Icon(Icons.receipt_long, color: Color(0xFF0284C7)),
-            label: 'Riwayat',
-          ),
-          const NavigationDestination(
-            icon: Icon(Icons.person_outline, color: Color(0xFF64748B)),
-            selectedIcon: Icon(Icons.person, color: Color(0xFF0284C7)),
-            label: 'Profil',
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return Obx(() => Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
         child: Column(
@@ -500,7 +275,7 @@ class _KatalogScreenState extends State<KatalogScreen> {
                           vertical: 11,
                         ),
                       ),
-                      onChanged: (_) => setState(() {}),
+                      onChanged: (_) {},
                       onSubmitted: (_) => _muatData(),
                     ),
                   ),
@@ -538,10 +313,7 @@ class _KatalogScreenState extends State<KatalogScreen> {
                           ),
                           onSelected: (selected) {
                             if (selected) {
-                              setState(() {
-                                _kategoriDipilih = kat;
-                              });
-                              _muatData();
+                              _c.gantiKategori(kat);
                             }
                           },
                         );
@@ -914,7 +686,7 @@ class _KatalogScreenState extends State<KatalogScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: _buildBottomNav(),
-    );
+      bottomNavigationBar: const NavBarBawah(currentIndex: 1),
+    ));
   }
 }
