@@ -1,15 +1,9 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+import 'package:get/get.dart';
 
-import '../services/layanan_api.dart';
-import '../utils/app_state.dart';
-import '../utils/konfigurasi_auth.dart';
+import '../controllers/login_controller.dart';
 
-/// Layar masuk / daftar pembeli.
-/// - Email + password: berfungsi penuh (Sanctum token).
-/// - Tombol Google: alur sudah terhubung, tinggal isi Client ID di
-///   [KonfigurasiAuth] dan `GOOGLE_CLIENT_ID` di .env server.
+/// Layar masuk / daftar pembeli menggunakan GetX.
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -19,7 +13,8 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen>
     with SingleTickerProviderStateMixin {
-  late final TabController _tab = TabController(length: 2, vsync: this);
+  late final TabController _tab;
+  late final LoginController _controller;
 
   final _formKey = GlobalKey<FormState>();
   final _namaController = TextEditingController();
@@ -27,10 +22,17 @@ class _LoginScreenState extends State<LoginScreen>
   final _passwordController = TextEditingController();
   final _konfirmasiController = TextEditingController();
 
-  bool _sedangProses = false;
-  bool _sembunyikanPassword = true;
-  bool _sembunyikanKonfirmasi = true;
-  String? _pesanGalat;
+  @override
+  void initState() {
+    super.initState();
+    _controller = Get.put(LoginController());
+    _tab = TabController(length: 2, vsync: this, initialIndex: _controller.tabIndex.value);
+    _tab.addListener(() {
+      if (!_tab.indexIsChanging) {
+        _controller.gantiTab(_tab.index);
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -42,154 +44,14 @@ class _LoginScreenState extends State<LoginScreen>
     super.dispose();
   }
 
-  Future<void> _prosesEmail() async {
-    if (!_formKey.currentState!.validate()) return;
-    setState(() {
-      _sedangProses = true;
-      _pesanGalat = null;
-    });
-
-    try {
-      final daftar = _tab.index == 1;
-
-      final sesi = daftar
-          ? await LayananApi.registerAkun(
-              nama: _namaController.text.trim(),
-              email: _emailController.text.trim(),
-              password: _passwordController.text,
-            )
-          : await LayananApi.loginEmail(
-              email: _emailController.text.trim(),
-              password: _passwordController.text,
-            );
-
-      await SesiAuth.simpanSesi(
-        sesi['token'] as String,
-        sesi['user'] as Map<String, dynamic>,
-      );
-      LayananApi.setToken(sesi['token'] as String);
-
-      // Keranjang guest otomatis digabung ke akun oleh server saat login.
-
-      if (!mounted) return;
-      await _tampilkanSukses(
-        daftar ? 'Pendaftaran Berhasil' : 'Login Berhasil',
-        'Selamat datang, ${SesiAuth.pengguna?.nama ?? 'Pengguna'}!',
-      );
-      if (!mounted) return;
-      Navigator.pop(context, true);
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _pesanGalat = e is InfoGalat ? e.pesan : e.toString();
-      });
-    } finally {
-      if (mounted) setState(() => _sedangProses = false);
-    }
-  }
-
-  /// Dialog alert sukses setelah login / daftar berhasil.
-  Future<void> _tampilkanSukses(String judul, String pesan) async {
-    await showDialog<void>(
+  void _kirimFormEmail() {
+    _controller.prosesEmail(
       context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        icon: const Icon(Icons.check_circle, color: Color(0xFF16A34A), size: 48),
-        title: Text(judul, style: const TextStyle(fontWeight: FontWeight.bold)),
-        content: Text(pesan),
-        actions: [
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF0284C7),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
+      formKey: _formKey,
+      nama: _namaController.text,
+      email: _emailController.text,
+      password: _passwordController.text,
     );
-  }
-
-  Future<void> _prosesGoogle() async {
-    if (!KonfigurasiAuth.googleTerpasang) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text(
-          'Google Sign-In belum dikonfigurasi.\n'
-          'Isi KonfigurasiAuth.googleWebClientId di '
-          'lib/utils/konfigurasi_auth.dart dan GOOGLE_CLIENT_ID di .env server.',
-        ),
-        duration: Duration(seconds: 5),
-        behavior: SnackBarBehavior.floating,
-      ));
-      return;
-    }
-
-    setState(() {
-      _sedangProses = true;
-      _pesanGalat = null;
-    });
-
-    try {
-      final google = GoogleSignIn.instance;
-      await google.initialize(
-        serverClientId: KonfigurasiAuth.googleWebClientId,
-        clientId: kIsWeb
-            ? KonfigurasiAuth.googleWebClientId
-            : null,
-      );
-
-      // Bersihkan cache sesi lama di Android Credential Manager
-      // untuk mencegah error "[16] Account reauth failed"
-      try {
-        await google.signOut();
-      } catch (_) {}
-
-      final akun = await google.authenticate();
-      final otentikasi = akun.authentication;
-      final idToken = otentikasi.idToken;
-
-      if (idToken == null || idToken.isEmpty) {
-        throw InfoGalat(
-          jenis: JenisGalat.galatServer,
-          pesan: 'Google tidak mengirim id_token. Periksa konfigurasi Client ID.',
-        );
-      }
-
-      final sesi = await LayananApi.loginGoogle(idToken);
-      await SesiAuth.simpanSesi(
-        sesi['token'] as String,
-        sesi['user'] as Map<String, dynamic>,
-      );
-      LayananApi.setToken(sesi['token'] as String);
-
-      // Keranjang guest otomatis digabung ke akun oleh server saat login.
-
-      if (!mounted) return;
-      await _tampilkanSukses(
-        'Login Berhasil',
-        'Selamat datang, ${SesiAuth.pengguna?.nama ?? 'Pengguna'}!',
-      );
-      if (!mounted) return;
-      Navigator.pop(context, true);
-    } on GoogleSignInException catch (e) {
-      if (!mounted) return;
-      if (e.code == GoogleSignInExceptionCode.canceled) {
-        setState(() => _sedangProses = false);
-        return;
-      }
-      setState(() => _pesanGalat = 'Google Sign-In gagal: ${e.description}');
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _pesanGalat = e is InfoGalat ? e.pesan : e.toString();
-      });
-    } finally {
-      if (mounted) setState(() => _sedangProses = false);
-    }
   }
 
   InputDecoration _buildInputDecoration({
@@ -311,9 +173,6 @@ class _LoginScreenState extends State<LoginScreen>
                   labelStyle: const TextStyle(fontWeight: FontWeight.bold),
                   indicatorSize: TabBarIndicatorSize.tab,
                   dividerColor: Colors.transparent,
-                  onTap: (_) {
-                    if (mounted) setState(() => _pesanGalat = null);
-                  },
                   tabs: const [
                     Tab(text: 'Masuk'),
                     Tab(text: 'Daftar Baru'),
@@ -337,151 +196,159 @@ class _LoginScreenState extends State<LoginScreen>
                     ),
                   ],
                 ),
-                child: Column(
-                  children: [
-                    if (_tab.index == 1) ...[
-                      TextFormField(
-                        controller: _namaController,
-                        decoration: _buildInputDecoration(
-                          label: 'Nama Lengkap',
-                          prefixIcon: Icons.person_outline,
+                child: Obx(() {
+                  final isDaftar = _controller.tabIndex.value == 1;
+                  final sembunyikanPass = _controller.sembunyikanPassword.value;
+                  final sembunyikanKonf = _controller.sembunyikanKonfirmasi.value;
+                  final pesanGalat = _controller.pesanGalat.value;
+                  final sedangProses = _controller.sedangProses.value;
+
+                  return Column(
+                    children: [
+                      if (isDaftar) ...[
+                        TextFormField(
+                          controller: _namaController,
+                          decoration: _buildInputDecoration(
+                            label: 'Nama Lengkap',
+                            prefixIcon: Icons.person_outline,
+                          ),
+                          validator: (v) => (v == null || v.trim().isEmpty)
+                              ? 'Nama wajib diisi'
+                              : null,
                         ),
-                        validator: (v) =>
-                            (v == null || v.trim().isEmpty) ? 'Nama wajib diisi' : null,
+                        const SizedBox(height: 14),
+                      ],
+
+                      TextFormField(
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: _buildInputDecoration(
+                          label: 'Email',
+                          prefixIcon: Icons.email_outlined,
+                        ),
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) {
+                            return 'Email wajib diisi';
+                          }
+                          if (!v.contains('@')) return 'Format email tidak valid';
+                          return null;
+                        },
                       ),
                       const SizedBox(height: 14),
-                    ],
 
-                    TextFormField(
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      decoration: _buildInputDecoration(
-                        label: 'Email',
-                        prefixIcon: Icons.email_outlined,
-                      ),
-                      validator: (v) {
-                        if (v == null || v.trim().isEmpty) return 'Email wajib diisi';
-                        if (!v.contains('@')) return 'Format email tidak valid';
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 14),
-
-                    TextFormField(
-                      controller: _passwordController,
-                      obscureText: _sembunyikanPassword,
-                      decoration: _buildInputDecoration(
-                        label: 'Password',
-                        prefixIcon: Icons.lock_outline,
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _sembunyikanPassword
-                                ? Icons.visibility_outlined
-                                : Icons.visibility_off_outlined,
-                            size: 18,
-                            color: const Color(0xFF64748B),
-                          ),
-                          onPressed: () => setState(
-                            () => _sembunyikanPassword = !_sembunyikanPassword,
-                          ),
-                        ),
-                      ),
-                      validator: (v) =>
-                          (v == null || v.length < 8) ? 'Password minimal 8 karakter' : null,
-                    ),
-
-                    if (_tab.index == 1) ...[
-                      const SizedBox(height: 14),
                       TextFormField(
-                        controller: _konfirmasiController,
-                        obscureText: _sembunyikanKonfirmasi,
+                        controller: _passwordController,
+                        obscureText: sembunyikanPass,
                         decoration: _buildInputDecoration(
-                          label: 'Ulangi Password',
-                          prefixIcon: Icons.lock_reset_outlined,
+                          label: 'Password',
+                          prefixIcon: Icons.lock_outline,
                           suffixIcon: IconButton(
                             icon: Icon(
-                              _sembunyikanKonfirmasi
+                              sembunyikanPass
                                   ? Icons.visibility_outlined
                                   : Icons.visibility_off_outlined,
                               size: 18,
                               color: const Color(0xFF64748B),
                             ),
-                            onPressed: () => setState(
-                              () => _sembunyikanKonfirmasi =
-                                  !_sembunyikanKonfirmasi,
-                            ),
+                            onPressed: _controller.togglePassword,
                           ),
                         ),
-                        validator: (v) =>
-                            (v != _passwordController.text) ? 'Konfirmasi tidak cocok' : null,
+                        validator: (v) => (v == null || v.length < 8)
+                            ? 'Password minimal 8 karakter'
+                            : null,
                       ),
-                    ],
 
-                    if (_pesanGalat != null) ...[
-                      const SizedBox(height: 14),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFEF2F2),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: const Color(0xFFFECACA)),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.error_outline,
-                              color: Color(0xFFDC2626),
-                              size: 18,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                _pesanGalat!,
-                                style: const TextStyle(
-                                  color: Color(0xFFDC2626),
-                                  fontSize: 12,
-                                ),
+                      if (isDaftar) ...[
+                        const SizedBox(height: 14),
+                        TextFormField(
+                          controller: _konfirmasiController,
+                          obscureText: sembunyikanKonf,
+                          decoration: _buildInputDecoration(
+                            label: 'Ulangi Password',
+                            prefixIcon: Icons.lock_reset_outlined,
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                sembunyikanKonf
+                                    ? Icons.visibility_outlined
+                                    : Icons.visibility_off_outlined,
+                                size: 18,
+                                color: const Color(0xFF64748B),
                               ),
+                              onPressed: _controller.toggleKonfirmasi,
                             ),
-                          ],
+                          ),
+                          validator: (v) => (v != _passwordController.text)
+                              ? 'Konfirmasi tidak cocok'
+                              : null,
                         ),
-                      ),
-                    ],
+                      ],
 
-                    const SizedBox(height: 18),
-
-                    SizedBox(
-                      width: double.infinity,
-                      height: 46,
-                      child: FilledButton(
-                        onPressed: _sedangProses ? null : _prosesEmail,
-                        style: FilledButton.styleFrom(
-                          backgroundColor: const Color(0xFF005B82),
-                          shape: RoundedRectangleBorder(
+                      if (pesanGalat != null) ...[
+                        const SizedBox(height: 14),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFEF2F2),
                             borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0xFFFECACA)),
                           ),
-                        ),
-                        child: _sedangProses
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : Text(
-                                _tab.index == 1 ? 'Daftar Sekarang' : 'Masuk',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.error_outline,
+                                color: Color(0xFFDC2626),
+                                size: 18,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  pesanGalat,
+                                  style: const TextStyle(
+                                    color: Color(0xFFDC2626),
+                                    fontSize: 12,
+                                  ),
                                 ),
                               ),
+                            ],
+                          ),
+                        ),
+                      ],
+
+                      const SizedBox(height: 18),
+
+                      SizedBox(
+                        width: double.infinity,
+                        height: 46,
+                        child: FilledButton(
+                          onPressed: sedangProses ? null : _kirimFormEmail,
+                          style: FilledButton.styleFrom(
+                            backgroundColor: const Color(0xFF005B82),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: sedangProses
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : Text(
+                                  isDaftar ? 'Daftar Sekarang' : 'Masuk',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  );
+                }),
               ),
 
               const SizedBox(height: 20),
@@ -500,29 +367,31 @@ class _LoginScreenState extends State<LoginScreen>
               ),
               const SizedBox(height: 16),
 
-              SizedBox(
-                height: 46,
-                child: OutlinedButton.icon(
-                  onPressed: _sedangProses ? null : _prosesGoogle,
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    side: const BorderSide(color: Color(0xFFE2E8F0)),
-                    backgroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+              Obx(() => SizedBox(
+                    height: 46,
+                    child: OutlinedButton.icon(
+                      onPressed: _controller.sedangProses.value
+                          ? null
+                          : () => _controller.prosesGoogle(context),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        side: const BorderSide(color: Color(0xFFE2E8F0)),
+                        backgroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      icon: const _LogoGoogle(),
+                      label: const Text(
+                        'Masuk dengan Google',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF1E293B),
+                          fontSize: 13.5,
+                        ),
+                      ),
                     ),
-                  ),
-                  icon: const _LogoGoogle(),
-                  label: const Text(
-                    'Masuk dengan Google',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF1E293B),
-                      fontSize: 13.5,
-                    ),
-                  ),
-                ),
-              ),
+                  )),
             ],
           ),
         ),

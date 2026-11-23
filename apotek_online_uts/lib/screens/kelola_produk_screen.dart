@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
+import '../controllers/kelola_produk_controller.dart';
 import '../models/produk_model.dart';
 import '../services/layanan_api.dart';
 import '../utils/app_state.dart';
@@ -15,109 +17,39 @@ class KelolaProdukScreen extends StatefulWidget {
 }
 
 class _KelolaProdukScreenState extends State<KelolaProdukScreen> {
-  KeadaanMuat _keadaan = KeadaanMuat.memuat;
-  InfoGalat? _galat;
-  List<ProdukModel> _daftarProduk = [];
-
-  String _kategoriDipilih = 'Semua';
-  final List<String> _kategoriList = ['Semua', 'Obat', 'Alat Kesehatan'];
-  final TextEditingController _searchController = TextEditingController();
-
+  late final KelolaProdukController _c;
   final ScrollController _scrollController = ScrollController();
-  int _halamanSekarang = 1;
-  bool _hasMore = true;
-  bool _sedangMuatLebih = false;
+
+  KeadaanMuat get _keadaan => _c.keadaan.value;
+  InfoGalat? get _galat => _c.galat.value;
+  List<ProdukModel> get _daftarProduk => _c.daftarProduk;
+  String get _kategoriDipilih => _c.kategoriDipilih.value;
+  List<String> get _kategoriList => _c.kategoriList;
+  TextEditingController get _searchController => _c.searchController;
+  bool get _hasMore => _c.hasMore.value;
 
   @override
   void initState() {
     super.initState();
+    _c = Get.put(KelolaProdukController());
     _scrollController.addListener(_onScroll);
-    _muatProduk();
   }
 
   @override
   void dispose() {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
-    _searchController.dispose();
     super.dispose();
   }
 
   void _onScroll() {
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 200) {
-      _muatLebih();
+      _c.muatLebih();
     }
   }
 
-  /// Memuat daftar produk langsung dari server dengan parameter ?kategori=, ?cari=, ?page=1
-  Future<void> _muatProduk() async {
-    setState(() {
-      _keadaan = KeadaanMuat.memuat;
-      _galat = null;
-      _halamanSekarang = 1;
-      _hasMore = true;
-      _sedangMuatLebih = false;
-    });
-
-    try {
-      final list = await LayananApi.getProduk(
-        kategori: _kategoriDipilih,
-        cari: _searchController.text.trim(),
-        page: 1,
-        perPage: 8,
-      );
-      if (!mounted) return;
-
-      setState(() {
-        _daftarProduk = list;
-        _hasMore = list.length >= 8;
-        _keadaan = list.isEmpty ? KeadaanMuat.kosong : KeadaanMuat.berhasil;
-      });
-    } catch (e) {
-      if (!mounted) return;
-
-      setState(() {
-        _galat = e is InfoGalat
-            ? e
-            : InfoGalat(jenis: JenisGalat.lainnya, pesan: e.toString());
-        _keadaan = KeadaanMuat.galat;
-      });
-    }
-  }
-
-  /// Memuat halaman berikutnya saat scroll mendekati ujung bawah (Infinite Scroll)
-  Future<void> _muatLebih() async {
-    if (_sedangMuatLebih || !_hasMore || _keadaan == KeadaanMuat.memuat) return;
-
-    setState(() => _sedangMuatLebih = true);
-
-    try {
-      final nextPage = _halamanSekarang + 1;
-      final itemsBaru = await LayananApi.getProduk(
-        kategori: _kategoriDipilih,
-        cari: _searchController.text.trim(),
-        page: nextPage,
-        perPage: 8,
-      );
-      if (!mounted) return;
-
-      setState(() {
-        _sedangMuatLebih = false;
-        if (itemsBaru.isEmpty) {
-          _hasMore = false;
-        } else {
-          _halamanSekarang = nextPage;
-          _daftarProduk.addAll(itemsBaru);
-          if (itemsBaru.length < 8) {
-            _hasMore = false;
-          }
-        }
-      });
-    } catch (_) {
-      if (mounted) setState(() => _sedangMuatLebih = false);
-    }
-  }
+  Future<void> _muatProduk() => _c.muatProduk();
 
   /// Menuju formulir produk (Tambah atau Ubah); kembali dengan hasil berhasil atau batal
   Future<void> _bukaFormProduk([ProdukModel? produk]) async {
@@ -205,7 +137,7 @@ class _KelolaProdukScreenState extends State<KelolaProdukScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return Obx(() => Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: const Text(
@@ -303,8 +235,7 @@ class _KelolaProdukScreenState extends State<KelolaProdukScreen> {
                   ),
                   onSelected: (selected) {
                     if (selected) {
-                      setState(() => _kategoriDipilih = kat);
-                      _muatProduk();
+                      _c.gantiKategori(kat);
                     }
                   },
                 );
@@ -590,6 +521,6 @@ class _KelolaProdukScreenState extends State<KelolaProdukScreen> {
           ),
         ],
       ),
-    );
+    ));
   }
 }

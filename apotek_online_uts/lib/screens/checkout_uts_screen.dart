@@ -1,15 +1,16 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 
+import '../controllers/auth_controller.dart';
+import '../controllers/checkout_uts_controller.dart';
 import '../models/keranjang_model.dart';
 import '../models/kurir_model.dart';
-import '../services/layanan_api.dart';
 import '../utils/app_state.dart';
 import '../utils/url_berkas.dart';
-import 'pesanan_detail_screen.dart';
 import 'profil_screen.dart';
 
 class CheckoutUtsScreen extends StatefulWidget {
@@ -23,10 +24,11 @@ class CheckoutUtsScreen extends StatefulWidget {
 
 class _CheckoutUtsScreenState extends State<CheckoutUtsScreen> {
   final _formKey = GlobalKey<FormState>();
+  late final CheckoutUtsController _c;
 
   final TextEditingController _namaController = TextEditingController(
-    text: SesiAuth.pengguna?.nama.isNotEmpty == true
-        ? SesiAuth.pengguna!.nama
+    text: AuthController.to.pengguna.value?.nama.isNotEmpty == true
+        ? AuthController.to.pengguna.value!.nama
         : 'Ceo Adyatma86',
   );
   final TextEditingController _teleponController = TextEditingController(
@@ -34,25 +36,23 @@ class _CheckoutUtsScreenState extends State<CheckoutUtsScreen> {
   );
   final TextEditingController _alamatController = TextEditingController();
   final TextEditingController _resepController = TextEditingController();
-  File? _fotoResep;
 
   late final String _idempotencyKey;
 
-  List<KurirModel> _daftarKurir = [];
-  KurirModel? _kurirDipilih;
-  bool _isMemuatKurir = false;
-  String? _galatKurir;
-
-  String _metodePembayaran = 'cod';
-
-  bool _isSedangCheckout = false;
-  InfoGalat? _galatCheckout;
+  File? get _fotoResep => _c.fotoResep.value;
+  List<KurirModel> get _daftarKurir => _c.daftarKurir;
+  KurirModel? get _kurirDipilih => _c.kurirDipilih.value;
+  bool get _isMemuatKurir => _c.isMemuatKurir.value;
+  String? get _galatKurir => _c.galatKurir.value;
+  String get _metodePembayaran => _c.metodePembayaran.value;
+  bool get _isSedangCheckout => _c.isSedangCheckout.value;
+  InfoGalat? get _galatCheckout => _c.galatCheckout.value;
 
   @override
   void initState() {
     super.initState();
+    _c = Get.put(CheckoutUtsController());
     _idempotencyKey = const Uuid().v4();
-    _muatKurir();
   }
 
   @override
@@ -67,13 +67,7 @@ class _CheckoutUtsScreenState extends State<CheckoutUtsScreen> {
   bool get _apakahAdaResep =>
       widget.keranjangData.items.any((item) => item.produk?.perluResep == true);
 
-  Future<void> _pilihFotoResep(ImageSource source) async {
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(source: source, imageQuality: 80);
-    if (picked != null && mounted) {
-      setState(() => _fotoResep = File(picked.path));
-    }
-  }
+  Future<void> _pilihFotoResep(ImageSource source) => _c.pilihFotoResep(source);
 
   void _tampilkanPilihFoto() {
     showModalBottomSheet(
@@ -123,105 +117,21 @@ class _CheckoutUtsScreenState extends State<CheckoutUtsScreen> {
     );
   }
 
-  int get _ongkir => _kurirDipilih?.tarif ?? 0;
+  int get _ongkir => _c.ongkir;
 
-  int get _totalEstimasi => widget.keranjangData.subtotal + _ongkir;
+  int get _totalEstimasi => _c.hitungTotal(widget.keranjangData);
 
-  Future<void> _muatKurir() async {
-    setState(() {
-      _isMemuatKurir = true;
-      _galatKurir = null;
-    });
+  Future<void> _muatKurir() => _c.muatKurir();
 
-    try {
-      final kurir = await LayananApi.getKurir();
-      if (!mounted) return;
-      setState(() {
-        _daftarKurir = kurir;
-        if (kurir.isNotEmpty && _kurirDipilih == null) {
-          _kurirDipilih = kurir.first;
-        }
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _galatKurir = e is InfoGalat ? e.pesan : e.toString();
-      });
-    } finally {
-      if (mounted) setState(() => _isMemuatKurir = false);
-    }
-  }
-
-  Future<void> _prosesCheckout() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    if (_kurirDipilih == null) {
-      setState(
-        () => _galatCheckout = InfoGalat(
-          jenis: JenisGalat.lainnya,
-          pesan: 'Pilih wilayah pengantaran kurir terlebih dahulu.',
-        ),
-      );
-      return;
-    }
-
-    setState(() {
-      _isSedangCheckout = true;
-      _galatCheckout = null;
-    });
-
-    try {
-      // Alamat digabung dengan nomor telepon kontak penerima
-      final alamatLengkap =
-          '${_alamatController.text.trim()} (Kontak/WA: ${_teleponController.text.trim()})';
-
-      final pesanan = await LayananApi.checkout(
+  Future<void> _prosesCheckout() => _c.prosesCheckout(
+        context: context,
+        formKey: _formKey,
         idempotencyKey: _idempotencyKey,
-        namaPenerima: _namaController.text.trim(),
-        alamat: alamatLengkap,
-        kurirId: _kurirDipilih!.id,
-        metodePembayaran: _metodePembayaran,
-        nomorResep: _resepController.text.trim().isEmpty
-            ? null
-            : _resepController.text.trim(),
-        fotoResep: _fotoResep,
+        nama: _namaController.text,
+        telepon: _teleponController.text,
+        alamat: _alamatController.text,
+        nomorResep: _resepController.text,
       );
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Pesanan #${pesanan.nomorPesanan} berhasil dibuat!'),
-          backgroundColor: const Color(0xFF0284C7),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => PesananDetailScreen(pesananId: pesanan.id),
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _galatCheckout = e is InfoGalat
-            ? e
-            : InfoGalat(jenis: JenisGalat.lainnya, pesan: e.toString());
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(_galatCheckout!.pesan),
-          backgroundColor: Colors.red.shade700,
-          behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 4),
-        ),
-      );
-    } finally {
-      if (mounted) setState(() => _isSedangCheckout = false);
-    }
-  }
 
   String _formatRupiah(num angka) {
     final s = angka.toStringAsFixed(0);
@@ -237,10 +147,11 @@ class _CheckoutUtsScreenState extends State<CheckoutUtsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final fotoUrl = UrlBerkas.dari(SesiAuth.pengguna?.fotoUrl);
-    final namaPengguna = SesiAuth.pengguna?.nama ?? 'Tamu (Guest)';
+    return Obx(() {
+      final fotoUrl = UrlBerkas.dari(AuthController.to.pengguna.value?.fotoUrl);
+      final namaPengguna = AuthController.to.pengguna.value?.nama ?? 'Tamu (Guest)';
 
-    return Scaffold(
+      return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         backgroundColor: Colors.white,
@@ -291,7 +202,7 @@ class _CheckoutUtsScreenState extends State<CheckoutUtsScreen> {
                 );
               },
               child: CircleAvatar(
-                radius: 16,
+                radius: 18,
                 backgroundColor: const Color(0xFF0284C7),
                 backgroundImage: fotoUrl != null && fotoUrl.isNotEmpty
                     ? NetworkImage(fotoUrl)
@@ -300,11 +211,11 @@ class _CheckoutUtsScreenState extends State<CheckoutUtsScreen> {
                     ? Text(
                         namaPengguna.isNotEmpty
                             ? namaPengguna.substring(0, 1).toUpperCase()
-                            : 'C',
+                            : 'T',
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
-                          fontSize: 13,
+                          fontSize: 14,
                         ),
                       )
                     : null,
@@ -506,7 +417,7 @@ class _CheckoutUtsScreenState extends State<CheckoutUtsScreen> {
                                     top: 6,
                                     right: 6,
                                     child: GestureDetector(
-                                      onTap: () => setState(() => _fotoResep = null),
+                                      onTap: _c.hapusFotoResep,
                                       child: Container(
                                         padding: const EdgeInsets.all(4),
                                         decoration: const BoxDecoration(
@@ -628,7 +539,7 @@ class _CheckoutUtsScreenState extends State<CheckoutUtsScreen> {
                       ..._daftarKurir.map((kurir) {
                         final dipilih = _kurirDipilih?.id == kurir.id;
                         return InkWell(
-                          onTap: () => setState(() => _kurirDipilih = kurir),
+                          onTap: () => _c.kurirDipilih.value = kurir,
                           borderRadius: BorderRadius.circular(12),
                           child: Container(
                             margin: const EdgeInsets.only(bottom: 8),
@@ -897,6 +808,7 @@ class _CheckoutUtsScreenState extends State<CheckoutUtsScreen> {
         ),
       ),
     );
+    });
   }
 
   Widget _buildCardSection({
@@ -972,7 +884,7 @@ class _CheckoutUtsScreenState extends State<CheckoutUtsScreen> {
   }) {
     final dipilih = _metodePembayaran == value;
     return InkWell(
-      onTap: () => setState(() => _metodePembayaran = value),
+      onTap: () => _c.metodePembayaran.value = value,
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.all(12),

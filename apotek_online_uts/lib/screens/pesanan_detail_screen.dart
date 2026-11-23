@@ -1,8 +1,8 @@
-﻿import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
+import '../controllers/pesanan_detail_controller.dart';
 import '../models/pesanan_model.dart';
-import '../services/layanan_api.dart';
 import '../utils/app_state.dart';
 import '../widgets/widget_keadaan.dart';
 import 'beranda_screen.dart';
@@ -17,122 +17,24 @@ class PesananDetailScreen extends StatefulWidget {
 }
 
 class _PesananDetailScreenState extends State<PesananDetailScreen> {
-  KeadaanMuat _keadaan = KeadaanMuat.memuat;
-  InfoGalat? _galat;
-  PesananModel? _pesanan;
-  bool _sedangUbahStatus = false;
+  late final PesananDetailController _c;
+
+  KeadaanMuat get _keadaan => _c.keadaan.value;
+  InfoGalat? get _galat => _c.galat.value;
+  PesananModel? get _pesanan => _c.pesanan.value;
+  bool get _sedangUbahStatus => _c.sedangUbahStatus.value;
 
   @override
   void initState() {
     super.initState();
-    _muatDetailPesanan();
+    _c = Get.put(PesananDetailController(), tag: '${widget.pesananId}');
+    _c.muatDetailPesanan(widget.pesananId);
   }
 
-  Future<void> _muatDetailPesanan() async {
-    setState(() {
-      _keadaan = KeadaanMuat.memuat;
-      _galat = null;
-    });
-
-    try {
-      var p = await LayananApi.getPesananDetail(widget.pesananId);
-      if (!mounted) return;
-
-      setState(() {
-        _pesanan = p;
-        _keadaan = KeadaanMuat.berhasil;
-      });
-
-      // Pesanan Xendit yang masih menunggu pembayaran: sinkronkan status
-      // invoice ke API Xendit (server-to-server) agar tidak selamanya PENDING.
-      if (p.metodePembayaran == 'xendit' && p.status == 'menunggu_pembayaran') {
-        try {
-          final terbaru = await LayananApi.syncStatusXendit(p.id);
-          if (!mounted) return;
-          setState(() => _pesanan = terbaru);
-          p = terbaru;
-        } catch (_) {
-          // Gagal sinkron tidak perlu menggagalkan halaman detail.
-        }
-      }
-    } catch (e) {
-      if (!mounted) return;
-
-      setState(() {
-        _galat = e is InfoGalat
-            ? e
-            : InfoGalat(jenis: JenisGalat.lainnya, pesan: e.toString());
-        _keadaan = KeadaanMuat.galat;
-      });
-    }
-  }
-
-  Future<void> _bukaInvoiceXendit() async {
-    final url = _pesanan?.xenditPaymentUrl;
-    if (url == null || url.isEmpty) return;
-
-    final uri = Uri.tryParse(url);
-    if (uri == null) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('URL invoice Xendit tidak valid.'),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return;
-    }
-
-    final berhasil = await launchUrl(uri, mode: LaunchMode.externalApplication);
-
-    if (!berhasil && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Invoice Xendit tidak dapat dibuka.'),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
-  }
-
-  Future<void> _ubahStatus(String statusTarget, String pesanSukses) async {
-    if (_pesanan == null) return;
-    setState(() => _sedangUbahStatus = true);
-
-    try {
-      final hasil = await LayananApi.updateStatusPesanan(
-        _pesanan!.id,
-        statusTarget,
-      );
-      if (!mounted) return;
-
-      setState(() {
-        _pesanan = hasil;
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(pesanSukses),
-          backgroundColor: const Color(0xFF0284C7),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      final pesan = e is InfoGalat ? e.pesan : e.toString();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(pesan),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    } finally {
-      if (mounted) setState(() => _sedangUbahStatus = false);
-    }
-  }
+  Future<void> _muatDetailPesanan() => _c.muatDetailPesanan(widget.pesananId);
+  Future<void> _bukaInvoiceXendit() => _c.bukaInvoiceXendit(context);
+  Future<void> _ubahStatus(String statusTarget, String pesanSukses) =>
+      _c.ubahStatus(context, statusTarget, pesanSukses);
 
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
@@ -226,9 +128,10 @@ class _PesananDetailScreenState extends State<PesananDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final p = _pesanan;
+    return Obx(() {
+      final p = _pesanan;
 
-    return Scaffold(
+      return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: const Text(
@@ -807,5 +710,6 @@ class _PesananDetailScreenState extends State<PesananDetailScreen> {
               ),
       ),
     );
+    });
   }
 }

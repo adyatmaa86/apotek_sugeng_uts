@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
+import '../controllers/form_produk_controller.dart';
 import '../models/produk_model.dart';
-import '../services/layanan_api.dart';
-import '../utils/app_state.dart';
 
 class FormProdukScreen extends StatefulWidget {
   final ProdukModel? produk;
@@ -15,6 +15,7 @@ class FormProdukScreen extends StatefulWidget {
 
 class _FormProdukScreenState extends State<FormProdukScreen> {
   final _formKey = GlobalKey<FormState>();
+  late final FormProdukController _c;
 
   late final TextEditingController _namaController;
   late final TextEditingController _hargaController;
@@ -23,36 +24,22 @@ class _FormProdukScreenState extends State<FormProdukScreen> {
   late final TextEditingController _satuanController;
   late final TextEditingController _deskripsiController;
 
-  late String _kategori;
-  late bool _perluResep;
-  late bool _tersedia;
-
-  bool _sedangMenyimpan = false;
-
   bool get _isEdit => widget.produk != null;
 
   @override
   void initState() {
     super.initState();
+    _c = Get.put(
+      FormProdukController(produkAwal: widget.produk),
+      tag: 'form_produk_${widget.produk?.id ?? 'baru'}',
+    );
     final p = widget.produk;
     _namaController = TextEditingController(text: p?.nama ?? '');
-    _hargaController = TextEditingController(
-      text: p != null ? '${p.harga}' : '',
-    );
-    _stokController = TextEditingController(
-      text: p != null ? '${p.stok}' : '10',
-    );
-    _batasController = TextEditingController(
-      text: p != null ? '${p.batasPerPembelian}' : '5',
-    );
-    _satuanController = TextEditingController(
-      text: p?.satuan ?? 'Strip (10 Tablet)',
-    );
+    _hargaController = TextEditingController(text: p != null ? '${p.harga}' : '');
+    _stokController = TextEditingController(text: p != null ? '${p.stok}' : '10');
+    _batasController = TextEditingController(text: p != null ? '${p.batasPerPembelian}' : '5');
+    _satuanController = TextEditingController(text: p?.satuan ?? 'Strip (10 Tablet)');
     _deskripsiController = TextEditingController(text: p?.deskripsi ?? '');
-
-    _kategori = p?.kategori ?? 'Obat';
-    _perluResep = p?.perluResep ?? false;
-    _tersedia = p?.tersedia ?? true;
   }
 
   @override
@@ -67,47 +54,22 @@ class _FormProdukScreenState extends State<FormProdukScreen> {
   }
 
   Future<void> _simpan() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    setState(() => _sedangMenyimpan = true);
-
-    final body = {
-      'nama': _namaController.text.trim(),
-      'harga': int.tryParse(_hargaController.text.trim()) ?? 0,
-      'kategori': _kategori,
-      'stok': int.tryParse(_stokController.text.trim()) ?? 0,
-      'batas_per_pembelian': int.tryParse(_batasController.text.trim()) ?? 1,
-      'satuan': _satuanController.text.trim(),
-      'deskripsi': _deskripsiController.text.trim(),
-      'perlu_resep': _perluResep,
-      'tersedia': _tersedia,
-    };
-
-    try {
-      if (_isEdit) {
-        await LayananApi.updateProduk(widget.produk!.id, body);
-      } else {
-        await LayananApi.tambahProduk(body);
-      }
-
-      if (!mounted) return;
-      // Kembali dengan hasil berhasil
+    final berhasil = await _c.simpan(
+      context: context,
+      formKey: _formKey,
+      nama: _namaController.text,
+      harga: _hargaController.text,
+      stok: _stokController.text,
+      batas: _batasController.text,
+      satuan: _satuanController.text,
+      deskripsi: _deskripsiController.text,
+    );
+    if (berhasil && mounted) {
       Navigator.pop(context, true);
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _sedangMenyimpan = false);
-      final pesan = e is InfoGalat ? e.pesan : e.toString();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(pesan),
-          backgroundColor: Colors.red,
-        ),
-      );
     }
   }
 
   void _batal() {
-    // Kembali dengan hasil batal
     Navigator.pop(context, false);
   }
 
@@ -132,13 +94,13 @@ class _FormProdukScreenState extends State<FormProdukScreen> {
             onPressed: _batal,
           ),
           actions: [
-            TextButton(
-              onPressed: _sedangMenyimpan ? null : _batal,
-              child: const Text(
-                'Batal',
-                style: TextStyle(color: Colors.white70),
-              ),
-            ),
+            Obx(() => TextButton(
+                  onPressed: _c.sedangMenyimpan.value ? null : _batal,
+                  child: const Text(
+                    'Batal',
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                )),
           ],
         ),
         body: SingleChildScrollView(
@@ -161,24 +123,24 @@ class _FormProdukScreenState extends State<FormProdukScreen> {
                 ),
                 const SizedBox(height: 14),
 
-                DropdownButtonFormField<String>(
-                  initialValue: _kategori,
-                  decoration: const InputDecoration(
-                    labelText: 'Kategori Produk *',
-                    prefixIcon: Icon(Icons.category),
-                    border: OutlineInputBorder(),
-                  ),
-                  items: const [
-                    DropdownMenuItem(value: 'Obat', child: Text('Obat')),
-                    DropdownMenuItem(
-                      value: 'Alat Kesehatan',
-                      child: Text('Alat Kesehatan'),
-                    ),
-                  ],
-                  onChanged: (val) {
-                    if (val != null) setState(() => _kategori = val);
-                  },
-                ),
+                Obx(() => DropdownButtonFormField<String>(
+                      initialValue: _c.kategori.value,
+                      decoration: const InputDecoration(
+                        labelText: 'Kategori Produk *',
+                        prefixIcon: Icon(Icons.category),
+                        border: OutlineInputBorder(),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: 'Obat', child: Text('Obat')),
+                        DropdownMenuItem(
+                          value: 'Alat Kesehatan',
+                          child: Text('Alat Kesehatan'),
+                        ),
+                      ],
+                      onChanged: (val) {
+                        if (val != null) _c.kategori.value = val;
+                      },
+                    )),
                 const SizedBox(height: 14),
 
                 TextFormField(
@@ -268,84 +230,83 @@ class _FormProdukScreenState extends State<FormProdukScreen> {
                     borderRadius: BorderRadius.circular(8),
                     side: BorderSide(color: Colors.grey.shade300),
                   ),
-                  child: Column(
-                    children: [
-                      SwitchListTile(
-                        title: const Text(
-                          'Perlu Resep Dokter',
-                          style: TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                        subtitle: const Text(
-                          'Tandai jika obat termasuk golongan obat keras',
-                        ),
-                        value: _perluResep,
-                        activeThumbColor: const Color(0xFF0284C7),
-                        onChanged: (val) => setState(() => _perluResep = val),
-                      ),
-                      const Divider(height: 1),
-                      SwitchListTile(
-                        title: const Text(
-                          'Produk Aktif / Tersedia',
-                          style: TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                        subtitle: const Text(
-                          'Jika dinonaktifkan, produk tampil sebagai tidak tersedia',
-                        ),
-                        value: _tersedia,
-                        activeThumbColor: const Color(0xFF0284C7),
-                        onChanged: (val) => setState(() => _tersedia = val),
-                      ),
-                    ],
-                  ),
+                  child: Obx(() => Column(
+                        children: [
+                          SwitchListTile(
+                            title: const Text(
+                              'Perlu Resep Dokter',
+                              style: TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                            subtitle: const Text(
+                              'Tandai jika obat termasuk golongan obat keras',
+                            ),
+                            value: _c.perluResep.value,
+                            activeThumbColor: const Color(0xFF0284C7),
+                            onChanged: (val) => _c.perluResep.value = val,
+                          ),
+                          const Divider(height: 1),
+                          SwitchListTile(
+                            title: const Text(
+                              'Produk Aktif / Tersedia',
+                              style: TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                            subtitle: const Text(
+                              'Jika dinonaktifkan, produk tampil sebagai tidak tersedia',
+                            ),
+                            value: _c.tersedia.value,
+                            activeThumbColor: const Color(0xFF0284C7),
+                            onChanged: (val) => _c.tersedia.value = val,
+                          ),
+                        ],
+                      )),
                 ),
                 const SizedBox(height: 24),
 
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: _sedangMenyimpan ? null : _batal,
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          side: const BorderSide(color: Color(0xFFE2E8F0)),
+                Obx(() {
+                  final sedangMenyimpan = _c.sedangMenyimpan.value;
+                  return Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: sedangMenyimpan ? null : _batal,
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            side: const BorderSide(color: Color(0xFFE2E8F0)),
+                          ),
+                          child: const Text('Batal'),
                         ),
-                        child: const Text('Batal'),
                       ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      flex: 2,
-                      child: ElevatedButton.icon(
-                        onPressed: _sedangMenyimpan ? null : _simpan,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF005B82),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        flex: 2,
+                        child: ElevatedButton.icon(
+                          onPressed: sedangMenyimpan ? null : _simpan,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF005B82),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                          icon: sedangMenyimpan
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Icon(Icons.save),
+                          label: Text(
+                            sedangMenyimpan
+                                ? 'Menyimpan...'
+                                : (_isEdit ? 'Simpan Perubahan' : 'Tambah Produk'),
                           ),
                         ),
-                        icon: _sedangMenyimpan
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Icon(Icons.save),
-                        label: Text(
-                          _sedangMenyimpan
-                              ? 'Menyimpan...'
-                              : (_isEdit ? 'Simpan Perubahan' : 'Tambah Produk'),
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
+                    ],
+                  );
+                }),
+                const SizedBox(height: 40),
               ],
             ),
           ),
@@ -354,4 +315,3 @@ class _FormProdukScreenState extends State<FormProdukScreen> {
     );
   }
 }
-
