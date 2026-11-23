@@ -71,7 +71,8 @@ class CheckoutController extends GetxController {
     try {
       final data = await LayananApi.getRajaongkirProvinces();
       daftarProvinsi.assignAll(data);
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Gagal memuat provinsi RajaOngkir: $e');
     } finally {
       isMemuatProvinsi.value = false;
     }
@@ -159,7 +160,8 @@ class CheckoutController extends GetxController {
         layananDipilih.value = null;
         ongkirRajaOngkir.value = 0;
       }
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Gagal menghitung tarif RajaOngkir: $e');
       layananRajaOngkir.clear();
       layananDipilih.value = null;
       ongkirRajaOngkir.value = 0;
@@ -343,7 +345,9 @@ class CheckoutController extends GetxController {
           }
         }
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Gagal reverse geocoding lokasi peta: $e');
+    }
   }
 
   void onPetaTap(

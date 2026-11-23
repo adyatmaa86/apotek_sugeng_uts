@@ -60,7 +60,8 @@ class _BerandaScreenState extends State<BerandaScreen> {
 
   Future<void> _muatData() => _c.muatData();
   Future<void> _muatConfig() => _c.muatConfig();
-  Future<void> _muatJumlahKeranjang() async {}
+  Future<void> _muatJumlahKeranjang() =>
+      KeranjangController.to.muatKeranjang(senyap: true);
 
   String _formatRupiah(num angka) {
     final s = angka.toStringAsFixed(0);
@@ -204,8 +205,8 @@ class _BerandaScreenState extends State<BerandaScreen> {
             ),
           ),
 
-          // Mode UTS Button (jika aktif)
-          if (_modeUtsAktif)
+          // Mode UTS Button (jika aktif & sedang login sebagai admin)
+          if (_modeUtsAktif && AuthController.to.adminAktif)
             IconButton(
               icon: const Icon(
                 Icons.inventory_2_outlined,

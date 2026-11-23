@@ -37,7 +37,9 @@ class BerandaController extends GetxController {
     try {
       final config = await LayananApi.getAppConfig();
       modeUtsAktif.value = config['mode_uts'] == true;
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Gagal memuat app config di BerandaController: $e');
+    }
   }
 
   Future<void> muatData() async {
@@ -92,7 +94,8 @@ class BerandaController extends GetxController {
           hasMore.value = false;
         }
       }
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Gagal muat lebih produk di BerandaController: $e');
       sedangMuatLebih.value = false;
     }
   }

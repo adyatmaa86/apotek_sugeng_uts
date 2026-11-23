@@ -14,7 +14,8 @@ class RajaOngkirService
 
     public function __construct()
     {
-        $this->apiKey = (string) config('services.rajaongkir.api_key', 'sjojZewy641172cd8395717cWZAg8DvX');
+        // Kunci hanya dari konfigurasi (.env) — tidak boleh ada di source code.
+        $this->apiKey = (string) config('services.rajaongkir.api_key');
         $this->baseUrl = (string) config('services.rajaongkir.base_url', 'https://rajaongkir.komerce.id/api/v1');
         $this->originDistrictId = (int) config('services.rajaongkir.origin_district', 2581); // Default: Tegalrejo, Kota Yogyakarta
     }
@@ -175,6 +176,11 @@ class RajaOngkirService
      */
     public function calculateCost(int|string $destinationCityId, int $weightGram = 1000, string $courier = 'jne'): array
     {
+        if ($this->apiKey === '') {
+            Log::warning('RAJAONGKIR_API_KEY belum diisi di .env — tarif tidak dihitung.');
+            return [];
+        }
+
         try {
             // Dapatkan kecamatan pertama di dalam kota tujuan untuk perhitungan tarif district
             $districtId = $this->getDistrictIdForCity((int) $destinationCityId);

@@ -96,7 +96,9 @@ class LoginController extends GetxController {
 
       try {
         await google.signOut();
-      } catch (_) {}
+      } catch (_) {
+        // Abaikan jika belum ada sesi Google aktif sebelumnya.
+      }
 
       final akun = await google.authenticate();
       final otentikasi = akun.authentication;

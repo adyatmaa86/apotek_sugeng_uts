@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Kebijakan keamanan jaringan Apotek Sugeng.
+  Rilis: hanya HTTPS (HTTP plaintext ditolak) -> token & password tidak disnif.
+  Debug (flutter run / demo lokal di LAN): HTTP ke server dev diperbolehkan
+  lewat debug-overrides, karena aplikasi debuggable hanya dibangun untuk demo.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+
+    <debug-overrides>
+        <base-config cleartextTrafficPermitted="true">
+            <trust-anchors>
+                <certificates src="system" />
+            </trust-anchors>
+        </base-config>
+    </debug-overrides>
+</network-security-config>

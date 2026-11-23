@@ -353,12 +353,13 @@ class PesananController extends BaseApiController
     /**
      * GET /api/pesanan/{id}
      * Rincian pesanan beserta itemnya (memuat harga saat pembelian) (PRD 7.1)
+     * Hanya pesanan milik pelanggan pengirim yang boleh dibaca (cegah IDOR).
      */
-    public function show(string|int $id): JsonResponse
+    public function show(Request $request, string|int $id): JsonResponse
     {
         $pesanan = Pesanan::with(['details', 'kurir'])->find($id);
 
-        if (!$pesanan) {
+        if (!$pesanan || ! $this->milikSaya($request, (string) $pesanan->pelanggan_id)) {
             return $this->gagal('Pesanan tidak ditemukan', 404);
         }
 
@@ -372,11 +373,11 @@ class PesananController extends BaseApiController
      * alih-alih menunggu callback, backend yang menanyakan status invoice
      * langsung ke API Xendit lalu memperbarui status pesanan.
      */
-    public function checkXenditStatus(string|int $id): JsonResponse
+    public function checkXenditStatus(Request $request, string|int $id): JsonResponse
     {
         $pesanan = Pesanan::with(['details', 'kurir'])->find($id);
 
-        if (!$pesanan) {
+        if (!$pesanan || ! $this->milikSaya($request, (string) $pesanan->pelanggan_id)) {
             return $this->gagal('Pesanan tidak ditemukan', 404);
         }
 
@@ -428,12 +429,18 @@ class PesananController extends BaseApiController
      * Transisi: menunggu_pembayaran -> menunggu_konfirmasi -> dibayar -> diproses -> dikirim -> selesai
      * Dibatalkan: hanya dari menunggu_pembayaran atau menunggu_konfirmasi
      * Perpindahan tidak sah wajib ditolak server dengan kode 409
+     *
+     * Batas klien (pembeli/tamu):
+     * - Hanya pemilik pesanan (cek pelanggan_id) yang boleh memanggil endpoint ini.
+     * - Status 'dibayar', 'diproses', dan 'dikirim' hanya boleh ditetapkan oleh
+     *   admin (panel web) atau gateway pembayaran (callback Xendit), sehingga
+     *   pembayaran tidak bisa dilewati oleh klien.
      */
     public function updateStatus(Request $request, string|int $id): JsonResponse
     {
         $pesanan = Pesanan::find($id);
 
-        if (!$pesanan) {
+        if (!$pesanan || ! $this->milikSaya($request, (string) $pesanan->pelanggan_id)) {
             return $this->gagal('Pesanan tidak ditemukan', 404);
         }
 
@@ -448,8 +455,19 @@ class PesananController extends BaseApiController
             return $this->gagal('Validasi status gagal', 422, $validator->errors()->toArray());
         }
 
+        $status = (string) $request->status;
+
+        $statusKlien = ['menunggu_konfirmasi', 'dibatalkan', 'selesai'];
+
+        if (! in_array($status, $statusKlien, true)) {
+            return $this->gagal(
+                'Status tersebut hanya dapat diubah oleh admin atau gateway pembayaran',
+                403,
+            );
+        }
+
         try {
-            $pesanan = $this->statusService->ubahStatus($pesanan, $request->status);
+            $pesanan = $this->statusService->ubahStatus($pesanan, $status);
         } catch (\DomainException $e) {
             return $this->gagal($e->getMessage(), 409);
         }
