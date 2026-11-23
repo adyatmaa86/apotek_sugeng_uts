@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
+import '../controllers/riwayat_pesanan_controller.dart';
 import '../models/pesanan_model.dart';
-import '../services/layanan_api.dart';
 import '../utils/app_state.dart';
+import '../controllers/auth_controller.dart';
 import '../utils/url_berkas.dart';
+import '../widgets/nav_bar_bawah.dart';
 import '../widgets/widget_keadaan.dart';
-import 'beranda_screen.dart';
-import 'katalog_screen.dart';
-import 'keranjang_screen.dart';
 import 'pesanan_detail_screen.dart';
 import 'profil_screen.dart';
 
@@ -19,135 +19,25 @@ class RiwayatPesananScreen extends StatefulWidget {
 }
 
 class _RiwayatPesananScreenState extends State<RiwayatPesananScreen> {
-  KeadaanMuat _keadaan = KeadaanMuat.memuat;
-  InfoGalat? _galat;
-  List<PesananModel> _semuaPesanan = [];
+  late final RiwayatPesananController _c;
 
-  // Filter & Search states
-  int _tabFilter = 0; // 0: Semua, 1: Berlangsung, 2: Selesai
-  final TextEditingController _pencarianController = TextEditingController();
-  DateTimeRange? _rentangTanggal;
-  int _jumlahItemKeranjang = 0;
-  int _navIndex = 3; // Index Riwayat
+  KeadaanMuat get _keadaan => _c.keadaan.value;
+  InfoGalat? get _galat => _c.galat.value;
+  List<PesananModel> get _semuaPesanan => _c.semuaPesanan;
+  int get _tabFilter => _c.tabFilter.value;
+  TextEditingController get _pencarianController => _c.pencarianController;
+  DateTimeRange? get _rentangTanggal => _c.rentangTanggal.value;
+  List<PesananModel> get _daftarPesananTersaring => _c.daftarPesananTersaring;
+  int get _hitungBerlangsung => _c.hitungBerlangsung;
+  int get _hitungSelesai => _c.hitungSelesai;
 
   @override
   void initState() {
     super.initState();
-    _muatRiwayat();
-    _muatJumlahKeranjang();
+    _c = Get.put(RiwayatPesananController());
   }
 
-  @override
-  void dispose() {
-    _pencarianController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _muatJumlahKeranjang() async {
-    try {
-      final keranjang = await LayananApi.getKeranjang();
-      if (!mounted) return;
-      setState(() {
-        _jumlahItemKeranjang = keranjang.totalItem;
-      });
-    } catch (_) {}
-  }
-
-  Future<void> _muatRiwayat() async {
-    setState(() {
-      _keadaan = KeadaanMuat.memuat;
-      _galat = null;
-    });
-
-    try {
-      final list = await LayananApi.getPesananList();
-      if (!mounted) return;
-
-      setState(() {
-        _semuaPesanan = list;
-        _keadaan = list.isEmpty ? KeadaanMuat.kosong : KeadaanMuat.berhasil;
-      });
-    } catch (e) {
-      if (!mounted) return;
-
-      setState(() {
-        _galat = e is InfoGalat
-            ? e
-            : InfoGalat(jenis: JenisGalat.lainnya, pesan: e.toString());
-        _keadaan = KeadaanMuat.galat;
-      });
-    }
-  }
-
-  bool _apakahPesananBerlangsung(String status) {
-    final s = status.toLowerCase();
-    return s == 'menunggu_pembayaran' ||
-        s == 'menunggu_konfirmasi' ||
-        s == 'diproses' ||
-        s == 'dikirim' ||
-        s == 'dibayar';
-  }
-
-  bool _apakahPesananSelesai(String status) {
-    final s = status.toLowerCase();
-    return s == 'selesai' || s == 'dibatalkan';
-  }
-
-  List<PesananModel> get _daftarPesananTersaring {
-    final keyword = _pencarianController.text.trim().toLowerCase();
-
-    return _semuaPesanan.where((p) {
-      // 1. Filter Tab
-      if (_tabFilter == 1 && !_apakahPesananBerlangsung(p.status)) {
-        return false;
-      }
-      if (_tabFilter == 2 && !_apakahPesananSelesai(p.status)) {
-        return false;
-      }
-
-      // 2. Filter Tanggal
-      if (_rentangTanggal != null) {
-        final parsedDate = DateTime.tryParse(p.createdAt);
-        if (parsedDate != null) {
-          final start = DateTime(
-            _rentangTanggal!.start.year,
-            _rentangTanggal!.start.month,
-            _rentangTanggal!.start.day,
-          );
-          final end = DateTime(
-            _rentangTanggal!.end.year,
-            _rentangTanggal!.end.month,
-            _rentangTanggal!.end.day,
-            23,
-            59,
-            59,
-          );
-          if (parsedDate.isBefore(start) || parsedDate.isAfter(end)) {
-            return false;
-          }
-        }
-      }
-
-      // 3. Filter Search
-      if (keyword.isNotEmpty) {
-        final cocokNomor = p.nomorPesanan.toLowerCase().contains(keyword);
-        final cocokPenerima = p.namaPenerima.toLowerCase().contains(keyword);
-        final cocokProduk = p.details.any(
-          (d) => d.namaProduk.toLowerCase().contains(keyword),
-        );
-        final cocokMetode = p.metodePembayaran.toLowerCase().contains(keyword);
-        return cocokNomor || cocokPenerima || cocokProduk || cocokMetode;
-      }
-
-      return true;
-    }).toList();
-  }
-
-  int get _hitungBerlangsung =>
-      _semuaPesanan.where((p) => _apakahPesananBerlangsung(p.status)).length;
-
-  int get _hitungSelesai =>
-      _semuaPesanan.where((p) => _apakahPesananSelesai(p.status)).length;
+  Future<void> _muatRiwayat() => _c.muatRiwayat();
 
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
@@ -534,43 +424,9 @@ class _RiwayatPesananScreenState extends State<RiwayatPesananScreen> {
     );
   }
 
-  void _onBottomNavTapped(int index) async {
-    if (index == 3) {
-      setState(() => _navIndex = 3);
-      return;
-    }
-
-    if (index == 0) {
-      await Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const BerandaScreen()),
-      );
-    } else if (index == 1) {
-      await Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const KatalogScreen()),
-      );
-    } else if (index == 2) {
-      await Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const KeranjangScreen()),
-      );
-    } else if (index == 4) {
-      await Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const ProfilScreen()),
-      );
-    }
-
-    if (mounted) {
-      setState(() => _navIndex = 3);
-      _muatJumlahKeranjang();
-    }
-  }
-
   Widget _buildTopHeader() {
-    final namaPengguna = SesiAuth.pengguna?.nama ?? 'Tamu (Guest)';
-    final fotoUrl = UrlBerkas.dari(SesiAuth.pengguna?.fotoUrl);
+    final namaPengguna = AuthController.to.pengguna.value?.nama ?? 'Tamu (Guest)';
+    final fotoUrl = UrlBerkas.dari(AuthController.to.pengguna.value?.fotoUrl);
 
     return Container(
       color: Colors.white,
@@ -630,14 +486,16 @@ class _RiwayatPesananScreenState extends State<RiwayatPesananScreen> {
                   );
                 },
                 child: CircleAvatar(
-                  radius: 17,
+                  radius: 18,
                   backgroundColor: const Color(0xFF0284C7),
-                  backgroundImage: fotoUrl != null ? NetworkImage(fotoUrl) : null,
-                  child: fotoUrl == null
+                  backgroundImage: fotoUrl != null && fotoUrl.isNotEmpty
+                      ? NetworkImage(fotoUrl)
+                      : null,
+                  child: fotoUrl == null || fotoUrl.isEmpty
                       ? Text(
                           namaPengguna.isNotEmpty
                               ? namaPengguna.substring(0, 1).toUpperCase()
-                              : 'A',
+                              : 'T',
                           style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
@@ -684,9 +542,7 @@ class _RiwayatPesananScreenState extends State<RiwayatPesananScreen> {
     return Expanded(
       child: GestureDetector(
         onTap: () {
-          setState(() {
-            _tabFilter = index;
-          });
+          _c.tabFilter.value = index;
         },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
@@ -732,7 +588,7 @@ class _RiwayatPesananScreenState extends State<RiwayatPesananScreen> {
                 controller: _pencarianController,
                 textAlignVertical: TextAlignVertical.center,
                 style: const TextStyle(fontSize: 13),
-                onChanged: (_) => setState(() {}),
+                onChanged: (_) {},
                 decoration: InputDecoration(
                   isDense: true,
                   hintText: 'Cari nomor nota atau pesanan...',
@@ -754,7 +610,6 @@ class _RiwayatPesananScreenState extends State<RiwayatPesananScreen> {
                           ),
                           onPressed: () {
                             _pencarianController.clear();
-                            setState(() {});
                           },
                         )
                       : null,
@@ -789,7 +644,7 @@ class _RiwayatPesananScreenState extends State<RiwayatPesananScreen> {
                 },
               );
               if (hasil != null) {
-                setState(() => _rentangTanggal = hasil);
+                _c.rentangTanggal.value = hasil;
               }
             },
             child: Container(
@@ -820,7 +675,7 @@ class _RiwayatPesananScreenState extends State<RiwayatPesananScreen> {
             IconButton(
               icon: const Icon(Icons.clear, size: 18, color: Colors.red),
               onPressed: () {
-                setState(() => _rentangTanggal = null);
+                _c.rentangTanggal.value = null;
               },
             ),
           ],
@@ -1209,144 +1064,55 @@ class _RiwayatPesananScreenState extends State<RiwayatPesananScreen> {
     );
   }
 
-  Widget _buildBottomNav() {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          top: BorderSide(color: Color(0xFFE2E8F0), width: 1),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x08000000),
-            blurRadius: 10,
-            offset: Offset(0, -3),
-          ),
-        ],
-      ),
-      child: NavigationBar(
-        selectedIndex: _navIndex,
-        onDestinationSelected: _onBottomNavTapped,
-        backgroundColor: Colors.white,
-        indicatorColor: const Color(0xFFE0F2FE),
-        elevation: 0,
-        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-        destinations: [
-          const NavigationDestination(
-            icon: Icon(Icons.home_outlined, color: Color(0xFF64748B)),
-            selectedIcon: Icon(Icons.home, color: Color(0xFF0284C7)),
-            label: 'Beranda',
-          ),
-          const NavigationDestination(
-            icon: Icon(Icons.grid_view_outlined, color: Color(0xFF64748B)),
-            selectedIcon: Icon(Icons.grid_view, color: Color(0xFF0284C7)),
-            label: 'Katalog',
-          ),
-          NavigationDestination(
-            icon: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                const Icon(
-                  Icons.shopping_bag_outlined,
-                  color: Color(0xFF64748B),
-                ),
-                if (_jumlahItemKeranjang > 0)
-                  Positioned(
-                    top: -4,
-                    right: -6,
-                    child: Container(
-                      padding: const EdgeInsets.all(3),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF0284C7),
-                        shape: BoxShape.circle,
-                      ),
-                      constraints: const BoxConstraints(
-                        minWidth: 16,
-                        minHeight: 16,
-                      ),
-                      child: Text(
-                        '$_jumlahItemKeranjang',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 8.5,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            selectedIcon: const Icon(
-              Icons.shopping_bag,
-              color: Color(0xFF0284C7),
-            ),
-            label: 'Keranjang',
-          ),
-          const NavigationDestination(
-            icon: Icon(Icons.receipt_long_outlined, color: Color(0xFF64748B)),
-            selectedIcon: Icon(Icons.receipt_long, color: Color(0xFF0284C7)),
-            label: 'Riwayat',
-          ),
-          const NavigationDestination(
-            icon: Icon(Icons.person_outline, color: Color(0xFF64748B)),
-            selectedIcon: Icon(Icons.person, color: Color(0xFF0284C7)),
-            label: 'Profil',
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final list = _daftarPesananTersaring;
+    return Obx(() {
+      final list = _daftarPesananTersaring;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildTopHeader(),
-            _buildFilterTabs(),
-            _buildSearchBar(),
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: () async {
-                  await _muatRiwayat();
-                  await _muatJumlahKeranjang();
-                },
-                color: const Color(0xFF0284C7),
-                child: WidgetKeadaan(
-                  keadaan: _keadaan,
-                  galat: _galat,
-                  pesanKosong: _pencarianController.text.isNotEmpty ||
-                          _tabFilter != 0 ||
-                          _rentangTanggal != null
-                      ? 'Tidak ada pesanan yang sesuai dengan filter atau kata kunci.'
-                      : 'Anda belum memiliki riwayat pesanan obat.',
-                  onCobaLagi: () {
-                    _muatRiwayat();
-                    _muatJumlahKeranjang();
+      return Scaffold(
+        backgroundColor: const Color(0xFFF8FAFC),
+        body: SafeArea(
+          child: Column(
+            children: [
+              _buildTopHeader(),
+              _buildFilterTabs(),
+              _buildSearchBar(),
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: () async {
+                    await _muatRiwayat();
                   },
-                  child: ListView.builder(
-                    padding: const EdgeInsets.only(top: 8, bottom: 16),
-                    itemCount: list.length + 1,
-                    itemBuilder: (context, index) {
-                      if (index == list.length) {
-                        return _buildHelpBanner();
-                      }
-                      final p = list[index];
-                      return _buildKartuPesanan(p);
+                  color: const Color(0xFF0284C7),
+                  child: WidgetKeadaan(
+                    keadaan: _keadaan,
+                    galat: _galat,
+                    pesanKosong: _pencarianController.text.isNotEmpty ||
+                            _tabFilter != 0 ||
+                            _rentangTanggal != null
+                        ? 'Tidak ada pesanan yang sesuai dengan filter atau kata kunci.'
+                        : 'Anda belum memiliki riwayat pesanan obat.',
+                    onCobaLagi: () {
+                      _muatRiwayat();
                     },
+                    child: ListView.builder(
+                      padding: const EdgeInsets.only(top: 8, bottom: 16),
+                      itemCount: list.length + 1,
+                      itemBuilder: (context, index) {
+                        if (index == list.length) {
+                          return _buildHelpBanner();
+                        }
+                        final p = list[index];
+                        return _buildKartuPesanan(p);
+                      },
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
-      bottomNavigationBar: _buildBottomNav(),
-    );
+        bottomNavigationBar: const NavBarBawah(currentIndex: 3),
+      );
+    });
   }
 }
