@@ -50,6 +50,9 @@ return [
         // OAuth 2.0 Client ID (tipe "Web application") dari Google Cloud Console.
         // Dipakai untuk memverifikasi id_token hasil Google Sign-In di server.
         'client_id' => env('GOOGLE_CLIENT_ID', ''),
+
+        // Kunci Google Maps untuk aplikasi (dikirim ke klien via GET /api/config).
+        'maps_key' => env('GOOGLE_MAPS_API_KEY', ''),
     ],
 
 ];

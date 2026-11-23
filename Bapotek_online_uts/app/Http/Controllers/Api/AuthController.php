@@ -7,6 +7,7 @@ use App\Models\User;
 use Firebase\JWT\ExpiredException;
 use Firebase\JWT\JWK;
 use Firebase\JWT\JWT;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -103,13 +104,49 @@ class AuthController extends BaseApiController
             return $this->gagal('Token Google tidak valid', 401);
         }
 
-        $user = User::updateOrCreate(
-            ['google_id' => $payload['sub']],
-            [
-                'name' => $payload['name'] ?? 'Pengguna Google',
-                'email' => $payload['email'],
-            ],
-        );
+        $sub = (string) ($payload['sub'] ?? '');
+
+        if ($sub === '') {
+            return $this->gagal('Token Google tidak memiliki identitas sub', 401);
+        }
+
+        $email = isset($payload['email']) ? (string) $payload['email'] : '';
+        $emailVerified = ($payload['email_verified'] ?? false) === true;
+
+        $user = User::where('google_id', $sub)->first();
+
+        // Belum pernah login Google: cocokkan berdasarkan email terverifikasi
+        // lalu TAUTKAN ke akun yang sudah ada, bukan membuat akun baru
+        // (insert baru pada email unique akan gagal 500).
+        if ($user === null && $email !== '') {
+            if (! $emailVerified) {
+                return $this->gagal('Email Google belum terverifikasi', 401);
+            }
+
+            $user = User::where('email', $email)->first();
+
+            if ($user !== null) {
+                $user->google_id = $sub;
+                $user->save();
+            }
+        }
+
+        if ($user === null) {
+            if ($email === '') {
+                return $this->gagal('Akun Google tidak menyediakan alamat email', 401);
+            }
+
+            try {
+                $user = User::create([
+                    'name' => $payload['name'] ?? 'Pengguna Google',
+                    'email' => $email,
+                    'google_id' => $sub,
+                    'email_verified_at' => $emailVerified ? now() : null,
+                ]);
+            } catch (QueryException) {
+                return $this->gagal('Email sudah terdaftar dengan metode lain. Silakan gunakan email & password.', 409);
+            }
+        }
 
         return $this->sukses($this->bentukSesi($user, 'google', $request), 'Login Google berhasil');
     }

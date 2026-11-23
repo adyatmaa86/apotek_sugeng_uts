@@ -11,7 +11,10 @@ class BaseApiController extends Controller
     /**
      * Resolusi identitas pelanggan:
      * - Jika request membawa token Sanctum yang valid -> "user_{id}".
-     * - Jika tanpa token (Guest) -> diidentifikasi dari header X-Guest-Id atau alamat IP klien.
+     * - Jika tanpa token (Guest) -> "guest_" + HMAC(IP | User-Agent, APP_KEY).
+     *
+     * Header X-Guest-Id TIDAK dipercaya lagi: identitas tamu diturunkan dari
+     * klien yang tidak bisa dipalsukan pihak lain tanpa mengetahui APP_KEY.
      */
     protected function pelangganId(Request $request): string
     {
@@ -21,13 +24,17 @@ class BaseApiController extends Controller
             return 'user_' . $user->id;
         }
 
-        // Mode Guest Murni: gunakan header X-Guest-Id bila dikirim, atau fallback hash IP
-        $guestId = $request->header('X-Guest-Id');
-        if (! empty($guestId)) {
-            return 'guest_' . preg_replace('/[^a-zA-Z0-9_-]/', '', $guestId);
-        }
+        $bahan = $request->ip() . '|' . $request->userAgent();
 
-        return 'guest_' . substr(md5($request->ip() . $request->userAgent()), 0, 16);
+        return 'guest_' . substr(hash_hmac('sha256', $bahan, (string) config('app.key')), 0, 16);
+    }
+
+    /**
+     * Cek kepemilikan baris milik pelanggan (404/403 sebelum operasi apa pun).
+     */
+    protected function milikSaya(Request $request, string $pelangganId): bool
+    {
+        return hash_equals($pelangganId, $this->pelangganId($request));
     }
 
     /**

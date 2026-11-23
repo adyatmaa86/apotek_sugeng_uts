@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
             'admin.auth' => \App\Http\Middleware\AdminAuth::class,
+            'admin.api' => \App\Http\Middleware\AdminApiAuth::class,
         ]);
 
         // Semua request /api diperlakukan JSON:

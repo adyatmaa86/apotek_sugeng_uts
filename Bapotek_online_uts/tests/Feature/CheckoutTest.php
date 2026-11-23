@@ -7,12 +7,28 @@ use App\Models\Kurir;
 use App\Models\Pesanan;
 use App\Models\PesananDetail;
 use App\Models\Produk;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class CheckoutTest extends TestCase
 {
     use RefreshDatabase;
+
+    /**
+     * Buat pembeli terautentikasi agar identitas pelanggan pada request
+     * (user_{id}) sama dengan pelanggan_id baris keranjang/pesanan.
+     */
+    private function pembeliAktif(): User
+    {
+        $pengguna = User::factory()->create();
+
+        Sanctum::actingAs($pengguna);
+
+        return $pengguna;
+    }
 
     private function buatProduk(int $stok = 10): Produk
     {
@@ -38,10 +54,10 @@ class CheckoutTest extends TestCase
         ]);
     }
 
-    private function isiKeranjang(Produk $produk, int $jumlah = 1): void
+    private function isiKeranjang(User $pelanggan, Produk $produk, int $jumlah = 1): void
     {
         Keranjang::create([
-            'pelanggan_id' => 'pelanggan_uts_01',
+            'pelanggan_id' => 'user_' . $pelanggan->id,
             'produk_id' => $produk->id,
             'jumlah' => $jumlah,
         ]);
@@ -49,9 +65,10 @@ class CheckoutTest extends TestCase
 
     public function test_checkout_menghitung_ongkir_di_server_dan_idempoten(): void
     {
+        $pelanggan = $this->pembeliAktif();
         $produk = $this->buatProduk();
         $kurir = $this->buatKurir();
-        $this->isiKeranjang($produk);
+        $this->isiKeranjang($pelanggan, $produk);
 
         $body = [
             'nama_penerima' => 'Test',
@@ -85,10 +102,26 @@ class CheckoutTest extends TestCase
 
     public function test_checkout_rajaongkir_menghitung_tarif_di_server(): void
     {
-        config(['services.rajaongkir.api_key' => '']);
+        config(['services.rajaongkir.api_key' => 'kunci-uji']);
 
+        // Layanan luar (Komerce) dipalsukan agar tes tidak bergantung jaringan.
+        Http::fake([
+            'https://rajaongkir.komerce.id/api/v1/destination/district/*' => Http::response([
+                'data' => [['id' => 1234, 'name' => 'Tegalrejo']],
+            ]),
+            'https://rajaongkir.komerce.id/api/v1/calculate/domestic-cost' => Http::response([
+                'data' => [[
+                    'service' => 'REG',
+                    'description' => 'Reguler',
+                    'cost' => 18000,
+                    'etd' => '2-3 days',
+                ]],
+            ]),
+        ]);
+
+        $pelanggan = $this->pembeliAktif();
         $produk = $this->buatProduk();
-        $this->isiKeranjang($produk);
+        $this->isiKeranjang($pelanggan, $produk);
 
         $response = $this->postJson('/api/checkout', [
             'nama_penerima' => 'Test',
@@ -108,8 +141,9 @@ class CheckoutTest extends TestCase
 
     public function test_checkout_tanpa_pilihan_pengiriman_ditolak(): void
     {
+        $pelanggan = $this->pembeliAktif();
         $produk = $this->buatProduk();
-        $this->isiKeranjang($produk);
+        $this->isiKeranjang($pelanggan, $produk);
 
         $response = $this->postJson('/api/checkout', [
             'nama_penerima' => 'Test',

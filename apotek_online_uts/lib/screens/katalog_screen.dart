@@ -59,7 +59,8 @@ class _KatalogScreenState extends State<KatalogScreen> {
   }
 
   Future<void> _muatData() => _c.muatData();
-  Future<void> _muatJumlahKeranjang() async {}
+  Future<void> _muatJumlahKeranjang() =>
+      KeranjangController.to.muatKeranjang(senyap: true);
   Future<void> _muatConfig() => _c.muatConfig();
 
   Widget _buildTopAppBar() {
@@ -97,7 +98,7 @@ class _KatalogScreenState extends State<KatalogScreen> {
           ),
           Row(
             children: [
-              if (_modeUtsAktif)
+              if (_modeUtsAktif && AuthController.to.adminAktif)
                 IconButton(
                   icon: const Icon(
                     Icons.inventory_2_outlined,

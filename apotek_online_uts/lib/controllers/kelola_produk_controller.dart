@@ -83,7 +83,8 @@ class KelolaProdukController extends GetxController {
           hasMore.value = false;
         }
       }
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Gagal muat lebih produk di KelolaProdukController: $e');
       sedangMuatLebih.value = false;
     }
   }
@@ -99,7 +100,8 @@ class KelolaProdukController extends GetxController {
       await LayananApi.hapusProduk(id);
       daftarProduk.removeWhere((p) => p.id == id);
       return true;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Gagal menghapus produk: $e');
       return false;
     }
   }

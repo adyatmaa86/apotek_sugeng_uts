@@ -14,7 +14,7 @@ class ConfigController extends BaseApiController
     public function index(): JsonResponse
     {
         return $this->sukses([
-            'google_maps_key' => env('GOOGLE_MAPS_API_KEY', ''),
+            'google_maps_key' => (string) config('services.google.maps_key', ''),
             'mode_uts' => PengaturanAplikasi::isModeUts(),
         ]);
     }

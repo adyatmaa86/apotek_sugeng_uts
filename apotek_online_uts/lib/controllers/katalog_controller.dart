@@ -37,7 +37,9 @@ class KatalogController extends GetxController {
     try {
       final config = await LayananApi.getAppConfig();
       modeUtsAktif.value = config['mode_uts'] == true;
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Gagal memuat app config di KatalogController: $e');
+    }
   }
 
   Future<void> muatData() async {
@@ -93,7 +95,8 @@ class KatalogController extends GetxController {
           hasMore.value = false;
         }
       }
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Gagal muat lebih produk di KatalogController: $e');
       sedangMuatLebih.value = false;
     }
   }

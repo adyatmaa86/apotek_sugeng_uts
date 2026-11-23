@@ -65,6 +65,12 @@ class AdminAkunController extends Controller
                 ->with('galat', 'Anda tidak dapat menghapus akun yang sedang login.');
         }
 
+        if (! $user->is_admin) {
+            return redirect()
+                ->route('admin.akun.index')
+                ->with('galat', 'Hanya akun admin yang dapat dihapus dari halaman ini.');
+        }
+
         $user->delete();
 
         return redirect()
