@@ -12,7 +12,7 @@ class DioClient {
 
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://192.168.1.12:8000/api',
+    defaultValue: 'http://192.168.1.8:8000/api',
   );
 
   static const Duration _timeout = Duration(seconds: 15);

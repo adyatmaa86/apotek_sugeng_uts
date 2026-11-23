@@ -18,6 +18,11 @@ class AuthController extends GetxController {
 
   bool get sedangLogin => token.value.isNotEmpty;
 
+  /// True bila sesi aktif adalah akun admin (dipakai untuk gerbang
+  /// Kelola Produk Mode UTS — server juga menolak non-admin).
+  bool get adminAktif =>
+      sedangLogin && (pengguna.value?.isAdmin ?? false);
+
   /// Item keranjang guest (sebelum login) yang perlu di-merge ke akun.
   List<Map<String, int>> keranjangGuestTertunda = [];
 

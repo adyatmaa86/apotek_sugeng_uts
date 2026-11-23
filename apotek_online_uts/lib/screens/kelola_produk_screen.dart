@@ -5,7 +5,9 @@ import '../controllers/kelola_produk_controller.dart';
 import '../models/produk_model.dart';
 import '../services/layanan_api.dart';
 import '../utils/app_state.dart';
-import '../utils/url_berkas.dart';
+import '../widgets/kelola_produk/kelola_produk_card.dart';
+import '../widgets/kelola_produk/kelola_produk_kategori_tabs.dart';
+import '../widgets/kelola_produk/kelola_produk_search_bar.dart';
 import '../widgets/widget_keadaan.dart';
 import 'form_produk_screen.dart';
 
@@ -156,95 +158,21 @@ class _KelolaProdukScreenState extends State<KelolaProdukScreen> {
       ),
       body: Column(
         children: [
-          // 1. Kotak Pencarian (Mengirim parameter ?cari= ke server)
-          Container(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-            color: Colors.white,
-            child: TextField(
-              controller: _searchController,
-              textAlignVertical: TextAlignVertical.center,
-              style: const TextStyle(fontSize: 13),
-              decoration: InputDecoration(
-                isDense: true,
-                hintText: 'Cari produk obat atau alkes...',
-                hintStyle: const TextStyle(
-                  fontSize: 13,
-                  color: Color(0xFF94A3B8),
-                ),
-                prefixIcon: const Icon(Icons.search, color: Color(0xFF0284C7)),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear, size: 18),
-                        onPressed: () {
-                          _searchController.clear();
-                          _muatProduk();
-                        },
-                      )
-                    : IconButton(
-                        icon: const Icon(Icons.arrow_forward, size: 18),
-                        onPressed: _muatProduk,
-                      ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 12,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: Color(0xFF0284C7)),
-                ),
-                filled: true,
-                fillColor: const Color(0xFFF8FAFC),
-              ),
-              onSubmitted: (_) => _muatProduk(),
-            ),
+          // 1. Kotak Pencarian
+          KelolaProdukSearchBar(
+            controller: _searchController,
+            onSubmitted: _muatProduk,
           ),
 
-          // 2. Penyaring Kategori (Mengirim parameter ?kategori= ke server)
-          Container(
-            height: 48,
-            color: Colors.white,
-            child: ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              scrollDirection: Axis.horizontal,
-              itemCount: _kategoriList.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 8),
-              itemBuilder: (context, index) {
-                final kat = _kategoriList[index];
-                final isSelected = kat == _kategoriDipilih;
-                return ChoiceChip(
-                  label: Text(kat),
-                  selected: isSelected,
-                  selectedColor: const Color(0xFF005B82),
-                  backgroundColor: Colors.white,
-                  side: BorderSide(
-                    color: isSelected
-                        ? const Color(0xFF005B82)
-                        : const Color(0xFFE2E8F0),
-                  ),
-                  labelStyle: TextStyle(
-                    color: isSelected ? Colors.white : Colors.black87,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  ),
-                  onSelected: (selected) {
-                    if (selected) {
-                      _c.gantiKategori(kat);
-                    }
-                  },
-                );
-              },
-            ),
+          // 2. Penyaring Kategori
+          KelolaProdukKategoriTabs(
+            kategoriList: _kategoriList,
+            kategoriDipilih: _kategoriDipilih,
+            onSelected: (kat) => _c.gantiKategori(kat),
           ),
           const Divider(height: 1),
 
-          // 3. Daftar Produk (Dibangun dengan ListView.builder)
+          // 3. Daftar Produk
           Expanded(
             child: RefreshIndicator(
               onRefresh: _muatProduk,
@@ -276,243 +204,10 @@ class _KelolaProdukScreenState extends State<KelolaProdukScreen> {
                     }
 
                     final p = _daftarProduk[index];
-                    final bool isStokKosong = p.stok <= 0;
-                    final bool isTidakTersedia = !p.tersedia;
-                    final bool isDisabled = isStokKosong || isTidakTersedia;
-
-                    return Card(
-                      elevation: 2,
-                      margin: const EdgeInsets.only(bottom: 10),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        side: BorderSide(
-                          color: isDisabled
-                              ? Colors.red.shade200
-                              : Colors.grey.shade200,
-                        ),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Foto / Icon Produk
-                                Container(
-                                  width: 52,
-                                  height: 52,
-                                  decoration: BoxDecoration(
-                                    color: isDisabled
-                                        ? Colors.grey.shade200
-                                        : const Color(0xFFE0F2FE),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  clipBehavior: Clip.antiAlias,
-                                  child: () {
-                                    final fotoUrl = UrlBerkas.dari(p.fotoUrl);
-                                    return fotoUrl != null && fotoUrl.isNotEmpty
-                                        ? Image.network(
-                                            fotoUrl,
-                                            fit: BoxFit.cover,
-                                            errorBuilder: (_, _, _) => Icon(
-                                              p.kategori == 'Obat'
-                                                  ? Icons.medication_liquid_outlined
-                                                  : Icons.medical_services_outlined,
-                                              color: isDisabled
-                                                  ? Colors.grey
-                                                  : const Color(0xFF0284C7),
-                                              size: 28,
-                                            ),
-                                          )
-                                        : Icon(
-                                            p.kategori == 'Obat'
-                                                ? Icons.medication_liquid_outlined
-                                                : Icons.medical_services_outlined,
-                                            color: isDisabled
-                                                ? Colors.grey
-                                                : const Color(0xFF0284C7),
-                                            size: 28,
-                                          );
-                                  }(),
-                                ),
-                                const SizedBox(width: 12),
-
-                                // Detail Nama & Harga
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        p.nama,
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16,
-                                          color: isDisabled
-                                              ? Colors.grey.shade700
-                                              : Colors.black87,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        '${formatRupiah(p.harga)} / ${p.satuan}',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          color: isDisabled
-                                              ? Colors.grey
-                                              : const Color(0xFF0284C7),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-
-                                // Tombol Aksi Ubah & Hapus
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    IconButton(
-                                      icon: const Icon(
-                                        Icons.edit,
-                                        color: Colors.blue,
-                                      ),
-                                      tooltip: 'Ubah Produk',
-                                      onPressed: () => _bukaFormProduk(p),
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(
-                                        Icons.delete,
-                                        color: Colors.red,
-                                      ),
-                                      tooltip: 'Hapus Produk',
-                                      onPressed: () =>
-                                          _konfirmasiHapusProduk(p),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-
-                            // Penanda Status Jelas (Stok Nol / Tidak Tersedia / Resep)
-                            Wrap(
-                              spacing: 6,
-                              runSpacing: 4,
-                              children: [
-                                if (isStokKosong)
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 3,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.red.shade100,
-                                      borderRadius: BorderRadius.circular(6),
-                                      border: Border.all(
-                                        color: Colors.red.shade400,
-                                      ),
-                                    ),
-                                    child: const Text(
-                                      '⛔ Stok Habis (0)',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.red,
-                                      ),
-                                    ),
-                                  )
-                                else
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 3,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.green.shade50,
-                                      borderRadius: BorderRadius.circular(6),
-                                      border: Border.all(
-                                        color: Colors.green.shade300,
-                                      ),
-                                    ),
-                                    child: Text(
-                                      'Stok: ${p.stok}',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.green.shade900,
-                                      ),
-                                    ),
-                                  ),
-
-                                if (isTidakTersedia)
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 3,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.orange.shade100,
-                                      borderRadius: BorderRadius.circular(6),
-                                      border: Border.all(
-                                        color: Colors.orange.shade400,
-                                      ),
-                                    ),
-                                    child: const Text(
-                                      '⚠️ Tidak Tersedia',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.deepOrange,
-                                      ),
-                                    ),
-                                  ),
-
-                                if (p.perluResep)
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 3,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.blue.shade50,
-                                      borderRadius: BorderRadius.circular(6),
-                                      border: Border.all(
-                                        color: Colors.blue.shade300,
-                                      ),
-                                    ),
-                                    child: const Text(
-                                      'Wajib Resep Dokter',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: Colors.blue,
-                                      ),
-                                    ),
-                                  ),
-
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 3,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey.shade100,
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Text(
-                                    'Max Beli: ${p.batasPerPembelian}',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.grey.shade800,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
+                    return KelolaProdukCard(
+                      produk: p,
+                      onEdit: () => _bukaFormProduk(p),
+                      onDelete: () => _konfirmasiHapusProduk(p),
                     );
                   },
                 ),
